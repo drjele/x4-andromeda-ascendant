@@ -17,7 +17,7 @@ script instead of modelled.
 | | |
 |---|---|
 | Blender | **4.2** — the Egosoft export tooling does not support newer versions, so do not "upgrade" to 4.3+ |
-| X4: Foundations | 9.0, all DLC |
+| X4: Foundations | 9.0 — no DLC required |
 | Python | none separately — the script runs inside Blender's bundled interpreter |
 
 ## Running the generator
