@@ -1,5 +1,9 @@
 # Andromeda Ascendant for X4: Foundations
 
+<p align="center">
+  <img src="extension/preview.jpg" alt="Andromeda Ascendant" width="512">
+</p>
+
 A fan mod that brings the Systems Commonwealth heavy cruiser **Andromeda Ascendant** into X4: Foundations 9.0 as a flyable XL ship.
 
 **Status: early. There is no in-game asset yet.** What exists today is
