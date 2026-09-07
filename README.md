@@ -20,6 +20,27 @@ I write the XML side. I do not know Blender, which is why the hull is generated 
 | X4: Foundations | 9.0 — no DLC required                                                                             |
 | Python          | none separately — the script runs inside Blender's bundled interpreter                            |
 
+## Install
+
+```bash
+./install.sh
+```
+
+The helper copies `extension/` into the game's `extensions/<extension-id>`
+directory, using the id in `extension/content.xml`. It searches the usual Steam layouts and additional library folders. To choose an installation:
+
+```bash
+X4_PATH="/path/to/X4 Foundations" ./install.sh
+```
+
+Restart X4 after installing or updating. To remove the manual installation:
+
+```bash
+./install.sh --uninstall
+```
+
+**The extension is a scaffold; installing it does not add a ship yet.**
+
 ## Running the generator
 
 1. Open Blender 4.2.
@@ -62,10 +83,9 @@ The shape table, and the thing you actually iterate on:
 ```python
 HULL_PROFILE = [
     # (t,   half_width, half_height, vertical_offset)
-    (0.000, 0.0000, 0.0000,  0.000),
+    (0.000, 0.0000, 0.0000, 0.000),
     (0.040, 0.0066, 0.0060, -0.002),
-    ...
-    (1.000, 0.0523, 0.0390,  0.000),
+    ...(1.000, 0.0523, 0.0390, 0.000),
 ]
 ```
 
@@ -122,25 +142,6 @@ The script places empties (`ARROWS` display) at positions derived from the hull 
 
 **These names are a working guess and have not been validated against what X4's component XML expects.** Verifying them is one of the open items below.
 
-## Status
-
-### Done
-
-- Hull lofting from the cross-section table, with superellipse sections and a collapsed prow
-- Twin engine nacelles and swept dorsal fins
-- Four LODs from one parameter set, joined into single meshes
-- Convex-hull collision mesh derived from LOD0
-- Connection empties placed from the hull profile rather than hand-positioned
-
-### Missing
-
-- **Mesh detailing.** The hull is a clean loft: no panelling, no greebles, no hangar recess, no bridge structure, no slipstream drive detail. No UVs, no materials, no textures.
-- **XMF export.** The Egosoft Blender toolchain has never been run against this. This is the single biggest gap, and the main thing I need help with.
-- **Hard-point naming.** The `con_*` names above need to be checked against the naming X4's component XML actually resolves, and corrected in the script.
-- **Collision mesh quality.** The `DECIMATE` modifier is left unapplied on the object, and the convex hull keeps interior geometry that should be cleaned out.
-- **Scale sanity.** At 1300 m this is considerably larger than any vanilla X4 ship. Whether that survives contact with the game's balance, and how many turret hard-points it should really carry, is unvalidated.
-- **The XML side.** Component and macro definitions, wares, text and mission director content are not written yet. That part is mine and is not blocked on anything here.
-
 ## Help wanted
 
 I am posting this looking for someone who knows Blender and, ideally, the X4 asset pipeline. Concretely, the useful contributions are:
@@ -165,6 +166,49 @@ Issues and PRs are welcome, and so is a reply on the reddit thread. If the proce
 | [`extension/md/`](extension/md)                                     | Mission director scripts                                                                          |
 
 The `extension/` directories are empty placeholders for now, tracked with `.gitkeep` so the layout is visible.
+
+## Status
+
+### Done
+
+- Hull lofting from the cross-section table, with superellipse sections and a collapsed prow
+- Twin engine nacelles and swept dorsal fins
+- Four LODs from one parameter set, joined into single meshes
+- Convex-hull collision mesh derived from LOD0
+- Connection empties placed from the hull profile rather than hand-positioned
+
+### Missing
+
+- **Mesh detailing.** The hull is a clean loft: no panelling, no greebles, no hangar recess, no bridge structure, no slipstream drive detail. No UVs, no materials, no textures.
+- **XMF export.** The Egosoft Blender toolchain has never been run against this. This is the single biggest gap, and the main thing I need help with.
+- **Hard-point naming.** The `con_*` names above need to be checked against the naming X4's component XML actually resolves, and corrected in the script.
+- **Collision mesh quality.** The `DECIMATE` modifier is left unapplied on the object, and the convex hull keeps interior geometry that should be cleaned out.
+- **Scale sanity.** At 1300 m this is considerably larger than any vanilla X4 ship. Whether that survives contact with the game's balance, and how many turret hard-points it should really carry, is unvalidated.
+- **The XML side.** Component and macro definitions, wares, text and mission director content are not written yet. That part is mine and is not blocked on anything here.
+
+## Publishing to the Steam Workshop
+
+Install **X Tools** (Steam app 282160) and keep Steam running and logged in with an account that owns X4. On Linux, install Proton as well; on Windows, run the helper from Git Bash, MSYS or Cygwin.
+
+```bash
+./publish.sh publish
+./publish.sh update "what changed"
+```
+
+Use `publish` once, then `update` with a change note. `X4_PATH`,
+`X_TOOLS_PATH` and `PROTON_PATH` override automatic discovery. The staging location must contain an `extensions` directory.
+
+The first upload records the numeric id in `steam/workshop-id`; retain that file for future updates. The readable id in the repository's `content.xml`
+stays unchanged. After publishing, open the printed Workshop URL, complete any required Steam agreement and choose the item's visibility. Avoid keeping both the manual installation and a subscription to the same mod enabled.
+
+Update the manifest version and release date together with `CHANGELOG.md`
+when releasing. See [Development](DEVELOPMENT.md) for staging, platform and release conventions.
+
+Andromeda has no playable asset yet; publish only when the extension is ready.
+
+## Development
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for setup, code style, validation and release conventions.
 
 ## Legal
 

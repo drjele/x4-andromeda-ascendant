@@ -11,4 +11,5 @@
           name="Andromeda Ascendant"
           description="Systems Commonwealth heavy cruiser Andromeda Ascendant as a flyable XL ship."
     />
+    <dependency version="900"/>
 </content>
