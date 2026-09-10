@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Exported on 2026-09-10 18:24:30 from Blender-->
+<!--Exported on 2026-09-10 21:47:36 from Blender-->
 <components>
   <component name="ship_and_xl_cruiser_01" class="ship_xl">
     <source geometry="extensions\andromeda_ascendant\assets\units\size_xl\ship_and_xl_cruiser_01_data" />
@@ -14,42 +14,42 @@
           <position x="0" y="33.72047" z="572.7405" />
         </offset>
       </connection>
-      <connection name="con_countermeasure_01" tags=" countermeasures">
+      <connection name="con_countermeasure_01" group="group_back_down_left" tags=" countermeasures">
         <offset>
           <position x="-81" y="0" z="-469.5584" />
         </offset>
       </connection>
-      <connection name="con_countermeasure_02" tags=" countermeasures">
+      <connection name="con_countermeasure_02" group="group_back_down_right" tags=" countermeasures">
         <offset>
           <position x="81" y="0" z="-469.5584" />
         </offset>
       </connection>
-      <connection name="con_countermeasure_03" tags=" countermeasures">
+      <connection name="con_countermeasure_03" group="group_back_down_left" tags=" countermeasures">
         <offset>
           <position x="-81" y="0" z="-195.6494" />
         </offset>
       </connection>
-      <connection name="con_countermeasure_04" tags=" countermeasures">
+      <connection name="con_countermeasure_04" group="group_back_down_right" tags=" countermeasures">
         <offset>
           <position x="81" y="0" z="-195.6494" />
         </offset>
       </connection>
-      <connection name="con_dockingbay_01" tags=" dockingbay">
+      <connection name="con_dockingbay_01" group="group_mid_up_left" tags=" dockingbay">
         <offset>
           <position x="-253.8124" y="-0.4538613" z="-0.275208" />
         </offset>
       </connection>
-      <connection name="con_dockingbay_02" tags=" dockingbay">
+      <connection name="con_dockingbay_02" group="group_mid_up_right" tags=" dockingbay">
         <offset>
           <position x="253.8124" y="-0.4538613" z="-0.2751646" />
         </offset>
       </connection>
-      <connection name="con_engine_01" tags=" engine extralarge standard">
+      <connection name="con_engine_01" group="group_back_down_left" tags=" engine extralarge standard">
         <offset>
           <position x="-48.6" y="0" z="-728.5974" />
         </offset>
       </connection>
-      <connection name="con_engine_02" tags=" engine extralarge standard">
+      <connection name="con_engine_02" group="group_back_down_right" tags=" engine extralarge standard">
         <offset>
           <position x="48.6" y="0" z="-728.5974" />
         </offset>
@@ -86,7 +86,7 @@
           <position x="0" y="0" z="-234.7792" />
         </offset>
       </connection>
-      <connection name="con_storage01" tags=" storage" />
+      <connection name="con_storage01" group="group_mid_up_mid" tags=" storage" />
       <connection name="con_turret_001" group="group_front_up_mid" tags=" turret large standard missile hittable combat">
         <offset>
           <position x="0" y="-6.409358" z="918" />
@@ -282,13 +282,13 @@
           <position x="148.5" y="319.1063" z="-864" />
         </offset>
       </connection>
-      <connection name="con_weapon_xl_01" tags=" combat extralarge mandatory ship_kha_xl_battleship_01 weapon">
+      <connection name="con_weapon_xl_01" group="group_front_up_left" tags=" combat extralarge mandatory ship_kha_xl_battleship_01 weapon">
         <offset>
           <position x="-463.1148" y="-231.1727" z="1350" />
           <quaternion qx="-0.7071068" qy="0" qz="0" qw="-0.7071068" />
         </offset>
       </connection>
-      <connection name="con_weapon_xl_02" tags=" combat extralarge mandatory ship_kha_xl_battleship_01 weapon">
+      <connection name="con_weapon_xl_02" group="group_front_up_right" tags=" combat extralarge mandatory ship_kha_xl_battleship_01 weapon">
         <offset>
           <position x="463.1146" y="-231.1726" z="1350" />
           <quaternion qx="-0.7071068" qy="0" qz="0" qw="-0.7071068" />

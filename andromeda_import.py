@@ -245,7 +245,7 @@ def place_fixed(vertex, points, factor, center):
         bridge = Vector((0.0, core_fore * 0.55, 0.0))
     add_connection("con_cockpit", "cockpit cockpit_visible", bridge, 1.0, DORSAL_FACING)
     add_connection("con_playercontrol", "playercontrol", bridge, 1.0, DORSAL_FACING)
-    add_connection("con_storage01", "storage", (0.0, 0.0, 0.0), 2.0)
+    add_connection("con_storage01", "storage", (0.0, 0.0, 0.0), 2.0, None, "group_mid_up_mid")
     add_connection("con_shiptrader", "shiptrader", (0.0, core_aft * 0.3, 0.0))
     engine_x = SHIP_LENGTH * 0.018
     for engine_index, side in enumerate((-1.0, 1.0)):
@@ -254,6 +254,8 @@ def place_fixed(vertex, points, factor, center):
             "engine extralarge standard",
             (side * engine_x, core_aft + SHIP_LENGTH * ENGINE_SINK, 0.0),
             1.6,
+            None,
+            f"group_back_down_{'left' if 0.0 > side else 'right'}",
         )
     for weapon_index, tip in enumerate(arm_tips(vertex)):
         add_connection(
@@ -262,6 +264,7 @@ def place_fixed(vertex, points, factor, center):
             tip,
             2.0,
             FORWARD_FACING,
+            f"group_front_up_{'left' if 0.0 > tip[0] else 'right'}",
         )
     shield_index = 0
     for along in SHIELD_DORSAL_STATIONS:
@@ -298,6 +301,9 @@ def place_fixed(vertex, points, factor, center):
             f"con_countermeasure_{cm_index + 1:02d}",
             "countermeasures",
             (side * SHIP_LENGTH * 0.03, core_aft * (0.6 if 2 > cm_index else 0.25), 0.0),
+            1.0,
+            None,
+            f"group_back_down_{'left' if 0.0 > side else 'right'}",
         )
     dock_index = 0
     for entry in points:
@@ -305,7 +311,14 @@ def place_fixed(vertex, points, factor, center):
             continue
         dock_index += 1
         location = (Vector(entry["position"]) - center) * factor
-        add_connection(f"con_dockingbay_{dock_index:02d}", "dockingbay", location, 2.0)
+        add_connection(
+            f"con_dockingbay_{dock_index:02d}",
+            "dockingbay",
+            location,
+            2.0,
+            None,
+            group_for(location, True),
+        )
     return medium_index, dock_index
 
 

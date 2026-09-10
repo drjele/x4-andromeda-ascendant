@@ -40,5 +40,26 @@
       <use threshold="0"/>
       <owner faction="player"/>
     </ware>
+    <ware id="weapon_and_xl_lance_01_mk1"
+          name="{90001,1020}"
+          description="{90001,1022}"
+          group="weapons"
+          transport="equipment"
+          volume="1"
+          tags="equipment weapon"
+    >
+      <price min="1850000" average="2180000" max="2510000"/>
+      <production time="60" amount="1" method="default" name="{20206,101}">
+        <primary>
+          <ware ware="advancedcomposites" amount="180"/>
+          <ware ware="energycells" amount="220"/>
+          <ware ware="fieldcoils" amount="140"/>
+        </primary>
+      </production>
+      <component ref="weapon_and_xl_lance_01_mk1_macro"/>
+      <restriction licence="militaryequipment"/>
+      <use threshold="0"/>
+      <owner faction="player"/>
+    </ware>
   </add>
 </diff>
