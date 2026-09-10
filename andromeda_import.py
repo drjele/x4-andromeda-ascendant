@@ -1,6 +1,7 @@
 """Build the X4-ready Andromeda scene in Blender 4.2 from the converted mesh."""
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -25,6 +26,9 @@ LARGE_TURRET_STATIONS = (0.34, 0.12, -0.14, -0.38)
 ARM_TURRET_STATIONS = (0.42, 0.26, 0.08, -0.12, -0.3, -0.46)
 FLANK_TURRET_STATIONS = (0.3, 0.0, -0.32)
 SAMPLE_RADIUS = 0.035
+DORSAL_FACING = (0.0, 0.0, 0.0)
+VENTRAL_FACING = (math.pi, 0.0, 0.0)
+HULL_CORE_FRACTION = 0.12
 
 
 def clear_scene():
@@ -67,6 +71,8 @@ def prepare_channels(mesh_object):
         mesh_object.data.color_attributes.new(name="col", type="BYTE_COLOR", domain="CORNER")
     mesh_object.data.materials.clear()
     mesh_object.data.materials.append(bpy.data.materials.new(MATERIAL_NAME))
+    for polygon in mesh_object.data.polygons:
+        polygon.use_smooth = True
 
 
 def apply_modifiers(mesh_object):
@@ -95,14 +101,39 @@ def build_parts(source):
     return made
 
 
-def add_connection(name, tags, location, size=1.0):
+def add_connection(name, tags, location, size=1.0, facing=None, group=None):
     empty = bpy.data.objects.new(name, None)
     empty.empty_display_type = "ARROWS"
     empty.empty_display_size = SHIP_LENGTH * 0.012 * size
     empty.location = location
+    if None is not facing:
+        empty.rotation_euler = facing
     bpy.context.scene.collection.objects.link(empty)
     empty["extratags"] = tags
+    if None is not group:
+        empty["group_name"] = group
     return empty
+
+
+def station_name(y_value):
+    if y_value > SHIP_LENGTH * 0.15:
+        return "front"
+    if y_value < -SHIP_LENGTH * 0.15:
+        return "back"
+    return "mid"
+
+
+def side_name(x_value):
+    if x_value > SHIP_LENGTH * 0.02:
+        return "right"
+    if x_value < -SHIP_LENGTH * 0.02:
+        return "left"
+    return "mid"
+
+
+def group_for(location, upward):
+    vertical = "up" if True == upward else "down"
+    return f"group_{station_name(location[1])}_{vertical}_{side_name(location[0])}"
 
 
 def surface_at(vertex, x_target, y_target, radius, upward):
@@ -130,7 +161,14 @@ def place_turrets(vertex):
             if None is point:
                 continue
             index += 1
-            add_connection(f"con_turret_{index:03d}", TURRET_LARGE_TAGS, point, 1.6)
+            add_connection(
+                f"con_turret_{index:03d}",
+                TURRET_LARGE_TAGS,
+                point,
+                1.6,
+                DORSAL_FACING if True == upward else VENTRAL_FACING,
+                group_for(point, upward),
+            )
     large_count = index
     for station in ARM_TURRET_STATIONS:
         y = station * SHIP_LENGTH
@@ -143,7 +181,14 @@ def place_turrets(vertex):
                 if None is point:
                     continue
                 index += 1
-                add_connection(f"con_turret_{index:03d}", TURRET_MEDIUM_TAGS, point)
+                add_connection(
+                    f"con_turret_{index:03d}",
+                    TURRET_MEDIUM_TAGS,
+                    point,
+                    1.0,
+                    DORSAL_FACING if True == upward else VENTRAL_FACING,
+                    group_for(point, upward),
+                )
     for station in FLANK_TURRET_STATIONS:
         y = station * SHIP_LENGTH
         for side in (-1.0, 1.0):
@@ -151,46 +196,80 @@ def place_turrets(vertex):
             if None is point:
                 continue
             index += 1
-            add_connection(f"con_turret_{index:03d}", TURRET_MEDIUM_TAGS, point)
+            add_connection(
+                f"con_turret_{index:03d}",
+                TURRET_MEDIUM_TAGS,
+                point,
+                1.0,
+                DORSAL_FACING,
+                group_for(point, True),
+            )
     return large_count, index - large_count
 
 
+def hull_core(vertex):
+    half_width = max(abs(c.x) for c in vertex)
+    core = [c for c in vertex if abs(c.x) < HULL_CORE_FRACTION * half_width]
+    return core if 0 < len(core) else vertex
+
+
 def place_fixed(vertex, points, factor, center):
-    top = max(c.z for c in vertex)
-    aft = min(c.y for c in vertex)
-    fore = max(c.y for c in vertex)
-    add_connection("con_cockpit", "cockpit cockpit_visible", (0.0, fore * 0.42, top * 0.6))
-    add_connection("con_playercontrol", "playercontrol", (0.0, fore * 0.42, top * 0.6))
+    core = hull_core(vertex)
+    core_aft = min(c.y for c in core)
+    core_fore = max(c.y for c in core)
+    radius = SHIP_LENGTH * SAMPLE_RADIUS
+    bridge = surface_at(vertex, 0.0, core_fore * 0.55, radius, True)
+    if None is bridge:
+        bridge = Vector((0.0, core_fore * 0.55, 0.0))
+    add_connection("con_cockpit", "cockpit cockpit_visible", bridge, 1.0, DORSAL_FACING)
+    add_connection("con_playercontrol", "playercontrol", bridge, 1.0, DORSAL_FACING)
     add_connection("con_storage01", "storage", (0.0, 0.0, 0.0), 2.0)
-    add_connection("con_shiptrader", "shiptrader", (0.0, aft * 0.2, 0.0))
-    add_connection(
-        "con_engine_01", "engine extralarge standard", (-SHIP_LENGTH * 0.028, aft, 0.0), 1.6
-    )
-    add_connection(
-        "con_engine_02", "engine extralarge standard", (SHIP_LENGTH * 0.028, aft, 0.0), 1.6
-    )
-    for shield_index, along in enumerate((0.4, 0.18, -0.05, -0.28, -0.45, 0.0)):
+    add_connection("con_shiptrader", "shiptrader", (0.0, core_aft * 0.3, 0.0))
+    engine_x = SHIP_LENGTH * 0.018
+    for engine_index, side in enumerate((-1.0, 1.0)):
         add_connection(
-            f"con_shieldgen_xl_{shield_index + 1:02d}",
+            f"con_engine_{engine_index + 1:02d}",
+            "engine extralarge standard",
+            (side * engine_x, core_aft * 0.98, 0.0),
+            1.6,
+        )
+    shield_index = 0
+    for along in (0.75, 0.45, 0.15, -0.15, -0.45, -0.75):
+        shield_index += 1
+        y = core_fore * along if 0.0 < along else core_aft * -along
+        point = surface_at(vertex, 0.0, y, radius, True)
+        if None is point:
+            point = Vector((0.0, y, 0.0))
+        add_connection(
+            f"con_shieldgen_xl_{shield_index:02d}",
             SHIELD_LARGE_TAGS,
-            (0.0, fore * along, top * 0.35),
+            point,
             1.4,
+            DORSAL_FACING,
+            group_for(point, True),
         )
     medium_index = 0
-    for along in (0.35, 0.1, -0.15, -0.4):
+    for along in (0.6, 0.2, -0.2, -0.6):
+        y = core_fore * along if 0.0 < along else core_aft * -along
         for side in (-1.0, 1.0):
             for upward in (True, False):
+                point = surface_at(vertex, side * SHIP_LENGTH * 0.05, y, radius, upward)
+                if None is point:
+                    continue
                 medium_index += 1
                 add_connection(
                     f"con_shieldgen_m_{medium_index:02d}",
                     SHIELD_MEDIUM_TAGS,
-                    (side * SHIP_LENGTH * 0.08, fore * along, top * (0.25 if upward else -0.25)),
+                    point,
+                    1.0,
+                    DORSAL_FACING if True == upward else VENTRAL_FACING,
+                    group_for(point, upward),
                 )
     for cm_index, side in enumerate((-1.0, 1.0, -1.0, 1.0)):
         add_connection(
             f"con_countermeasure_{cm_index + 1:02d}",
             "countermeasures",
-            (side * SHIP_LENGTH * 0.04, aft * (0.5 if 2 > cm_index else 0.2), 0.0),
+            (side * SHIP_LENGTH * 0.03, core_aft * (0.6 if 2 > cm_index else 0.25), 0.0),
         )
     dock_index = 0
     for entry in points:

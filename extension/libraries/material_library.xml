@@ -4,23 +4,16 @@
     <collection name="andromeda">
       <material name="andromeda_hull" shader="p1_complex_surface" blendmode="NONE" preview="none">
         <properties>
-          <property type="BitMap"
-                    name="diffuse_map"
-                    value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_hull_diff"
-          />
+          <property type="Color" name="diffuse_color" r="208" g="212" b="218" a="255" value="(color 1 1 1)"/>
           <property type="BitMap"
                     name="normal_map"
                     value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_hull_normal"
           />
-          <property type="BitMap"
-                    name="selfillumination_map"
-                    value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_hull_glow"
-          />
           <property type="Float" name="diffuseStr" value="1.0"/>
-          <property type="Float" name="normalStr" value="0.9"/>
-          <property type="Float" name="environmentStr" value="1.0"/>
-          <property type="Float" name="Smoothness" value="0.55"/>
-          <property type="Float" name="Metallness" value="0.75"/>
+          <property type="Float" name="normalStr" value="1.0"/>
+          <property type="Float" name="environmentStr" value="0.6"/>
+          <property type="Float" name="Smoothness" value="0.45"/>
+          <property type="Float" name="Metallness" value="0.35"/>
         </properties>
       </material>
     </collection>
