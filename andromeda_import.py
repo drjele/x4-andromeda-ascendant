@@ -30,8 +30,11 @@ DORSAL_FACING = (0.0, 0.0, 0.0)
 VENTRAL_FACING = (math.pi, 0.0, 0.0)
 HULL_CORE_FRACTION = 0.12
 MOUNT_SINK = 0.004
-SHIELD_DORSAL_STATIONS = (0.72, 0.36, -0.02, -0.4)
-SHIELD_VENTRAL_STATIONS = (0.3, -0.3)
+SHIELD_DORSAL_STATIONS = (0.5, -0.25)
+SHIELD_VENTRAL_STATIONS = (0.5, -0.25)
+MAIN_WEAPON_TAGS = "combat extralarge mandatory ship_kha_xl_battleship_01 weapon"
+FORWARD_FACING = (-math.pi / 2.0, 0.0, 0.0)
+ENGINE_SINK = 0.02
 
 
 def clear_scene():
@@ -215,6 +218,17 @@ def sink(point, upward):
     return Vector((point[0], point[1], point[2] - depth if True == upward else point[2] + depth))
 
 
+def arm_tips(vertex):
+    half_width = max(abs(c.x) for c in vertex)
+    tips = []
+    for side in (-1.0, 1.0):
+        arm = [c for c in vertex if 0.0 < c.x * side and abs(c.x) > 0.5 * half_width]
+        if 0 == len(arm):
+            continue
+        tips.append(max(arm, key=lambda c: c.y))
+    return tips
+
+
 def hull_core(vertex):
     half_width = max(abs(c.x) for c in vertex)
     core = [c for c in vertex if abs(c.x) < HULL_CORE_FRACTION * half_width]
@@ -238,8 +252,16 @@ def place_fixed(vertex, points, factor, center):
         add_connection(
             f"con_engine_{engine_index + 1:02d}",
             "engine extralarge standard",
-            (side * engine_x, core_aft * 0.98, 0.0),
+            (side * engine_x, core_aft + SHIP_LENGTH * ENGINE_SINK, 0.0),
             1.6,
+        )
+    for weapon_index, tip in enumerate(arm_tips(vertex)):
+        add_connection(
+            f"con_weapon_xl_{weapon_index + 1:02d}",
+            MAIN_WEAPON_TAGS,
+            tip,
+            2.0,
+            FORWARD_FACING,
         )
     shield_index = 0
     for along in SHIELD_DORSAL_STATIONS:

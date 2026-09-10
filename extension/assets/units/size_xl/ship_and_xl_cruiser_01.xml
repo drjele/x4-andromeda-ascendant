@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Exported on 2026-09-10 18:20:47 from Blender-->
+<!--Exported on 2026-09-10 18:24:30 from Blender-->
 <components>
   <component name="ship_and_xl_cruiser_01" class="ship_xl">
     <source geometry="extensions\andromeda_ascendant\assets\units\size_xl\ship_and_xl_cruiser_01_data" />
@@ -46,12 +46,12 @@
       </connection>
       <connection name="con_engine_01" tags=" engine extralarge standard">
         <offset>
-          <position x="-48.6" y="0" z="-766.9454" />
+          <position x="-48.6" y="0" z="-728.5974" />
         </offset>
       </connection>
       <connection name="con_engine_02" tags=" engine extralarge standard">
         <offset>
-          <position x="48.6" y="0" z="-766.9454" />
+          <position x="48.6" y="0" z="-728.5974" />
         </offset>
       </connection>
       <connection name="con_playercontrol" tags=" playercontrol">
@@ -61,33 +61,23 @@
       </connection>
       <connection name="con_shieldgen_xl_01" group="group_front_up_mid" tags=" extralarge shield standard">
         <offset>
-          <position x="0" y="9.391126" z="749.7694" />
+          <position x="0" y="275.6593" z="520.6732" />
         </offset>
       </connection>
       <connection name="con_shieldgen_xl_02" group="group_mid_up_mid" tags=" extralarge shield standard">
         <offset>
-          <position x="0" y="297.0362" z="374.8847" />
+          <position x="0" y="297.8131" z="-195.6494" />
         </offset>
       </connection>
-      <connection name="con_shieldgen_xl_03" group="group_mid_up_mid" tags=" extralarge shield standard">
+      <connection name="con_shieldgen_xl_03" group="group_front_down_mid" tags=" extralarge shield standard">
         <offset>
-          <position x="0" y="335.0824" z="-15.65195" />
-        </offset>
-      </connection>
-      <connection name="con_shieldgen_xl_04" group="group_mid_up_mid" tags=" extralarge shield standard">
-        <offset>
-          <position x="0" y="164.4104" z="-313.039" />
-        </offset>
-      </connection>
-      <connection name="con_shieldgen_xl_05" group="group_mid_down_mid" tags=" extralarge shield standard">
-        <offset>
-          <position x="0" y="-194.0263" z="312.4039" />
+          <position x="0" y="-180.6184" z="520.6732" />
           <quaternion qx="-1" qy="0" qz="0" qw="-4.371139e-08" />
         </offset>
       </connection>
-      <connection name="con_shieldgen_xl_06" group="group_mid_down_mid" tags=" extralarge shield standard">
+      <connection name="con_shieldgen_xl_04" group="group_mid_down_mid" tags=" extralarge shield standard">
         <offset>
-          <position x="0" y="-269.3417" z="-234.7792" />
+          <position x="0" y="-298.381" z="-195.6494" />
           <quaternion qx="-1" qy="0" qz="0" qw="-4.371139e-08" />
         </offset>
       </connection>
@@ -290,6 +280,18 @@
       <connection name="con_turret_036" group="group_back_up_right" tags=" turret medium standard missile hittable combat">
         <offset>
           <position x="148.5" y="319.1063" z="-864" />
+        </offset>
+      </connection>
+      <connection name="con_weapon_xl_01" tags=" combat extralarge mandatory ship_kha_xl_battleship_01 weapon">
+        <offset>
+          <position x="-463.1148" y="-231.1727" z="1350" />
+          <quaternion qx="-0.7071068" qy="0" qz="0" qw="-0.7071068" />
+        </offset>
+      </connection>
+      <connection name="con_weapon_xl_02" tags=" combat extralarge mandatory ship_kha_xl_battleship_01 weapon">
+        <offset>
+          <position x="463.1146" y="-231.1726" z="1350" />
+          <quaternion qx="-0.7071068" qy="0" qz="0" qw="-0.7071068" />
         </offset>
       </connection>
       <connection name="ConnectionForpart_main" tags="part ">
