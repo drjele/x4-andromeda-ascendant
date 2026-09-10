@@ -6,15 +6,10 @@
 
 A fan mod that brings the Systems Commonwealth heavy cruiser **Andromeda Ascendant** into X4: Foundations 9.0 as a flyable XL ship.
 
-**Status: early. Nothing has been loaded by the game yet.** The hull is now a real modelled mesh
-rather than a procedural loft: [`soase_import.py`](soase_import.py) converts the Andromeda Ascendant
-from the [Sins of a Solar Empire Andromeda Mod](#mesh-source), and
-[`andromeda_import.py`](andromeda_import.py) normalises it to X4 axes, scale and connection points.
-Nothing has been exported to XMF. See [Status](#status) for the honest split, and
-[Help wanted](#help-wanted) if you know the X4 asset pipeline.
+**Status: it builds, it flies, and it looks wrong.** A modelled hull goes through the whole Egosoft toolchain to X4's own `.xmf`, the ship can be built at a player shipyard and flown, and its thirty-six turrets work. What it does not do is render correctly: the hull comes out red and partly see-through for reasons nobody has tracked down yet. See [Open](#open) for that and the rest, and
+[The asset pipeline](#the-asset-pipeline) for how the conversion actually works — it is written down in full so nobody has to rediscover it.
 
-I write the XML side. The procedural generator [`andromeda_gen.py`](andromeda_gen.py) is kept as a
-blocking tool and as the source of the axis and naming conventions the import mirrors.
+The procedural generator [`andromeda_gen.py`](andromeda_gen.py) is kept as a blocking tool and for the axis conventions, but it no longer produces the shipped hull.
 
 ## Requirements
 
@@ -43,69 +38,105 @@ Restart X4 after installing or updating. To remove the manual installation:
 ./install.sh --uninstall
 ```
 
-**The extension installs a buildable ship with its own hull.** The Andromeda geometry is exported to
-X4's own `.xmf` format through the official Egosoft toolchain, with LOD0-3, collision, wreck and Jolt
-physics meshes.
+**The extension installs a buildable ship with its own hull.** The Andromeda geometry is exported to X4's own `.xmf` format through the official Egosoft toolchain, with LOD0-3, collision, wreck and Jolt physics meshes.
 
-Restart X4 after installing. The ship is **player-only**: the ware names the player as its sole
-owner, so no faction builds or sells it and NPC fleets never fill up with Andromedas. The blueprint is
-granted by [`extension/md/andromeda_blueprint.xml`](extension/md/andromeda_blueprint.xml), so it can
-be built at a player shipyard and nowhere else.
+Restart X4 after installing. The ship is **player-only**: the ware names the player as its sole owner, so no faction builds or sells it and NPC fleets never fill up with Andromedas. The blueprint is granted by [`extension/md/andromeda_blueprint.xml`](extension/md/andromeda_blueprint.xml), so it can be built at a player shipyard and nowhere else.
 
 ## Mesh source
 
-The hull comes from the **SOASE Andromeda Mod** for Sins of a Solar Empire, by **CKYRules**, published
-on [ModDB](https://www.moddb.com/mods/andromedamod) in 2011. It is used here **with the author's
-permission**, and the credit stays in this file, in the extension manifest and in the Workshop
-description.
+The hull was modelled by **[grannyte](https://www.reddit.com/user/grannyte/)** and is used here **with their permission**. The credit stays in this file, in the extension manifest and in the Workshop description. The copy this project works from was distributed inside the Andromeda mod for Sins of a Solar Empire on [ModDB](https://www.moddb.com/mods/andromedamod).
 
-The archive ships `Mesh/XMC.mesh` — the XMC Glorious Heritage class heavy cruiser — in Ironclad's
-**text** mesh format, so no binary conversion is needed:
+The archive ships `Mesh/XMC.mesh` — the XMC Glorious Heritage class heavy cruiser — in Ironclad's **text** mesh format, so no binary conversion is needed:
 
-| | |
-|-----------------|---------------------------------------------------------------------|
-| Geometry        | 9,853 vertices, 11,912 triangles, 2 materials                       |
-| Hardpoints      | 23 points: `Weapon-0` ×6, `Weapon-1` ×4, `Hangar` ×2, plus effects |
-| Source extents  | 795 × 1368 × 358 units, bow along `+Z`, up along `+Y`               |
-| Textures        | `stamp4.DDS`, `stamp4dm2.DDS` (emissive), `stamp4NRM.dds` (normal)  |
+|                |                                                                    |
+|----------------|--------------------------------------------------------------------|
+| Geometry       | 9,853 vertices, 11,912 triangles, 2 materials                      |
+| Hardpoints     | 23 points: `Weapon-0` ×6, `Weapon-1` ×4, `Hangar` ×2, plus effects |
+| Source extents | 795 × 1368 × 358 units, bow along `+Z`, up along `+Y`              |
+| Textures       | `stamp4.DDS`, `stamp4dm2.DDS` (emissive), `stamp4NRM.dds` (normal) |
 
-The archive is not redistributed here and is excluded by `.gitignore`. Download it yourself from the
-ModDB page above.
+The archive is not redistributed here and is excluded by `.gitignore`. Download it yourself from the ModDB page above.
 
-## Converting the mesh
+## The asset pipeline
+
+Getting the mesh from its Sins format into something X4 loads takes four stages. Every stage runs headless, so the whole chain is scriptable and repeatable.
+
+### 1. Tooling
+
+|                                     |                                                                                                                                       |
+|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| Blender **4.2**                     | The Egosoft extensions do not support 4.3+. Use the official build, not a distribution package.                                       |
+| Egosoft Blender Mod Tools **0.7.0** | From the [bonus material page](https://www.egosoft.com/download/x4/bonus_en.php). Requires an X game registered on the forum account. |
+| `innoextract`                       | The tools ship as an Inno Setup installer. Extracting it beats running it.                                                            |
+| Docker, or a Windows box            | For the converter — see stage 3.                                                                                                      |
+
+The installer holds four Blender extensions, `VHACD.exe`, `XUConverter.exe` and, importantly, a
+`readme.txt` that is otherwise only visible during installation. Extract with
+`innoextract -e -d <dir> EgosoftBlenderModTools_v0.7.0.exe`, then install the extensions:
 
 ```bash
-python3 soase_import.py "<archive>/Mesh/XMC.mesh" -o ~/andromeda
+for z in ego_tools groups io_scene_dae vhacd; do
+    blender --command extension install-file -r user_default -e <dir>/userdocs/Egosoft/Extensions/$z.zip
+done
 ```
 
-This writes `XMC.obj`, `XMC.mtl` and `XMC_points.json`, converting the Sins axes (`X` right, `Y` up,
-`Z` forward) into the `+Y` forward, `+Z` up convention X4 expects, flipping `X` to preserve winding
-and flipping `V` to the OpenGL texture convention. It prints geometry counts and extents on every run.
+Copy `Blender_Properties.xml` and `material_presets.xml` to `~/Documents/Blender/`. The first holds the full list of connection tags X4 understands and is worth reading.
 
-## Importing into Blender
+### 2. Sins mesh to OBJ
 
-1. Open Blender 4.2.
-2. **Scripting** tab → **New**.
-3. Paste the contents of [`andromeda_import.py`](andromeda_import.py).
-4. Set `SOURCE_DIRECTORY` to the directory you converted into.
-5. **Run Script**.
-
-Everything lands in the `andromeda_ascendant` collection, and rerunning wipes it first. The script
-scales the hull so bow-to-stern is `SHIP_LENGTH`, centres the origin, decimates the LOD chain, derives
-a convex-hull collision mesh and places the `con_*` empties. The console prints:
-
-```
-andromeda: 1300 m, scale 0.9502, lod0 11912, lod1 6551, lod2 2978, lod3 1191
-andromeda: collision 384 faces, 10 turrets, 2 docks
+```bash
+python3 soase_import.py "<archive>/Mesh/XMC.mesh" -o ~/x4mod/source
 ```
 
-| Empty                               | Count | Derived from                                                         |
-|-------------------------------------|-------|------------------------------------------------------------------------|
-| `con_turret_001` … `con_turret_010` | 10    | The `Weapon-0` and `Weapon-1` hardpoints, ordered bow to stern         |
-| `con_dock_01`, `con_dock_02`        | 2     | The `Hangar` hardpoints                                                |
-| `con_engine_01`, `con_engine_02`    | 2     | Computed — the source mesh carries no engine hardpoint                |
+[`soase_import.py`](soase_import.py) parses Ironclad's text mesh format — an indentation-nested key-value tree — and writes `XMC.obj`, `XMC.mtl` and `XMC_points.json`. It refuses binary meshes; convert those with ConvertX first.
 
-The source hardpoints all carry an identity orientation, so orientation still has to be authored.
+Sins uses `X` right, `Y` up, `Z` forward. The converter maps `(x, y, z)` to `(-x, z, y)`: swapping the two axes alone would mirror the model, so negating `X` restores the handedness. Triangle winding is reversed to match and `V` is flipped out of the DirectX convention.
+
+### 3. Blender scene
+
+```bash
+blender --background --python andromeda_import.py -- "<path>/p1[assets]/andromeda/ship_and_xl_cruiser_01.blend"
+```
+
+[`andromeda_import.py`](andromeda_import.py) builds the scene X4 expects: `part_main` plus
+`part_main.LOD1` through `.LOD3` and a `part_main.wreck`, the UV channel renamed `uv1`, a `col` vertex colour attribute, and the connection empties. It scales the hull to `SHIP_LENGTH`, centres the origin and samples the hull surface to place turrets rather than trusting the source hardpoints.
+
+Three things about connections are easy to get wrong and cost real time:
+
+- **Names do not matter, tags do.** X4 reads the tags; the names are free. A turret is
+  `turret medium standard missile hittable combat`, an engine `engine extralarge standard`, a shield
+  `extralarge shield standard`. The role word alone is not enough — without a size the game offers no slot at all.
+- **Orientation is the mounting normal.** A connection's local `+Y` points away from the hull, so a ventral mount carries a 180 degree flip. Without it every turret faces the same way.
+- **Every connection needs a group.** Vanilla groups all of them, named by station:
+  `group_front_up_left`, `group_back_down_mid` and so on. The equipment browser lists nothing for a connection with no group, even though a loadout preset can still fill it.
+
+The Blender addon registers its tag and group properties as real object properties, which do not exist under `--factory-startup`. The build script writes an `extratags` string property and a `group_name`
+custom property instead, and the export step copies `group_name` onto the addon's `groups` property before exporting.
+
+### 4. Export and convert
+
+The Egosoft exporter runs headless. The `.blend` path must contain the literal string `[assets]` or the operator refuses, and `scene.classAttr` has to be set first:
+
+```python
+bpy.context.scene.classAttr = "ship_xl"
+bpy.ops.ego_tools.export_data(write_xml=True)
+```
+
+That writes a `.dae` and the component `.xml`. `XUConverter.exe` then turns the `.dae` into X4's own formats — lod meshes, collision, Jolt physics hulls. It takes a source and a destination folder and then watches the source, so conversion triggers on a file change; rewrite the `.dae` after it starts. The folder names `p1[assets]` and `p1data` are fixed, because the converter derives the destination by substituting one for the other.
+
+**The converter does not run under Proton.** Proton's builtin `CONCRT140` is missing symbols it imports and `mfc140` is absent entirely, so it exits silently. Plain Wine with the real Microsoft runtime works:
+
+```bash
+docker run -d --name x4conv --entrypoint /bin/bash scottyhardy/docker-wine:latest -c 'sleep infinity'
+docker exec x4conv bash -c 'WINEPREFIX=/root/.wine wineboot -i && xvfb-run -a winetricks -q -f vcrun2022'
+```
+
+Then run `XUConverter.exe "Z:\x4mod\p1[assets]" "Z:\x4mod\p1data"` inside the container.
+
+### Textures
+
+X4 reads **DXT5 with a full mipmap chain**, gzipped, referenced from the material library without an extension. Uncompressed dds is silently ignored. The material itself goes in a diff against
+`/materiallibrary`, using the `p1_complex_surface` shader — lowercase, no `.fx` suffix, whatever the community guide says. Thin surfaces need `blendmode="TWOSIDED"` or you see straight through them.
 
 ## Running the generator
 
@@ -206,17 +237,13 @@ The script places empties (`ARROWS` display) at positions derived from the hull 
 | `con_dock_01`                       | 1     | Ventral, `t` 0.660                                                                                                      |
 | `con_cockpit`                       | 1     | Dorsal, `t` 0.180                                                                                                       |
 
-**These names are a working guess and have not been validated against what X4's component XML expects.** Verifying them is one of the open items below.
+These names come from the generator and predate the real pipeline. X4 does not care about connection names at all — it reads tags and groups. See [The asset pipeline](#the-asset-pipeline) for the rules that actually apply.
 
 ## Help wanted
 
-I am posting this looking for someone who knows Blender and, ideally, the X4 asset pipeline. Concretely, the useful contributions are:
+Issues and pull requests are welcome. The two open items worth the most are the red hull and the mission director cue, both described under [Open](#open) — they are the difference between a ship that looks and equips correctly and one that does not.
 
-1. Authoring X4 materials and textures for the hull — it currently renders untextured.
-2. Judging whether the 2009 Sins textures are worth converting, or whether the hull wants new ones.
-3. Balance: 1300 m is larger than any vanilla ship, and ten turrets on an XL hull is a guess.
-
-Issues and PRs are welcome, and so is a reply on the reddit thread. If the procedural approach is simply the wrong way round and the ship should be modelled by hand, that is useful to hear too.
+If you know the X4 asset pipeline, the section on it above is written down precisely so nobody has to rediscover it: the tag and group rules, the orientation convention, the texture format, and why the converter needs Wine rather than Proton. Corrections to any of that are as useful as code.
 
 ## Structure
 
@@ -239,25 +266,25 @@ The `extension/` directories are empty placeholders for now, tracked with `.gitk
 
 ### Done
 
-- Parsing Ironclad's text mesh format: geometry, UVs, materials and hardpoints
+- Ironclad text mesh parsed into OBJ with geometry, UVs, materials and hardpoints
 - Axis, winding and texture-coordinate conversion into the X4 convention
-- A real modelled hull at 11,912 triangles, with UVs and the original texture assignments
-- Normalisation to `SHIP_LENGTH` with a centred origin, and a decimated four-step LOD chain
-- Collision mesh from a cleaned convex hull with interior geometry removed
-- Turret and dock connections derived from the original hardpoints rather than guessed
-- Export to `.xmf` through the official Egosoft Blender tools, driven headless
-- Component XML with 20 tagged connections, generated by the toolchain rather than hand-written
-- The procedural generator, still runnable for blocking work
+- The whole Egosoft toolchain driven headless, from Blender scene to `.xmf`
+- lod0-3, collision, wreck and Jolt physics meshes, converting with no errors
+- Component XML with fifty-one tagged and grouped connections, generated rather than hand-written
+- Six large and thirty medium turrets placed by sampling the hull surface, each oriented outward
+- Ship macro, ware, localised text and index entries; the ship builds and flies
+- Engines sunk into the hull so no engine model shows, only the exhaust
 
-### Missing
+### Open
 
-- **Textures and materials.** The hull ships with one placeholder material and no X4 material library entry, so it renders untextured. The 2009 Sins textures are still unconverted.
-- **Borrowed sub-macros.** The cockpit, storage and dock connections bind Argon macros, so the bridge interior and cargo bay are vanilla Argon parts.
-- **Hard-point naming and orientation.** The `con_*` names need to be checked against the naming X4's component XML actually resolves. The source hardpoints all carry an identity orientation, so turret facing has to be authored from scratch.
-- **Engine connections.** The source mesh has no engine hardpoint; the two placed are computed from the aft of the central hull and are a guess.
-- **Materials for X4.** The mesh keeps its Sins materials and DDS references. X4's shaders and material library need their own definitions, and the 2009 textures may not survive the move.
-- **Scale sanity.** At 1300 m this is considerably larger than any vanilla X4 ship. Whether that survives contact with the game's balance, and how many turret hard-points it should really carry, is unvalidated.
-- **The component XML.** The macro, ware, blueprint script and text exist; the component that would describe our own geometry and connections does not, because there is nothing to point it at yet.
+These are the things a contributor could pick up. The first two are the ones that matter.
+
+- **The hull renders red, and partly see-through.** Not a missing material — a missing material gives magenta, and that was fixed long ago. The material resolves, the textures are valid DXT5 with mipmaps and load in other tools, `blendmode` is `TWOSIDED`, and the `col` vertex colour attribute is filled with neutral grey. Something else in `p1_complex_surface` is driving the colour and the transparency. Comparing against a vanilla ship material property by property is the obvious next step, and nobody has done it yet.
+- **The mission director cue never fires.** `md/andromeda_blueprint.xml` holds a root cue with no conditions, which should run when the script is instantiated. A `debug_text` inside it never reaches the log on an existing save, so the blueprints are never granted — which is why the custom engine and main gun never appear for sale however correct their wares and index entries are. Either the cue needs a condition or a delay, or new MD scripts are only instantiated on a new game.
+- **Turrets and shields sit on the hull rather than in it.** They are sunk a few metres, but the hull has no recesses for them because none were modelled. This one needs a modeller, not a script.
+- **The hull has no detail texture.** The normal map from the source set is good and is used. The diffuse is nearly black where this hull's UVs land, and what looks like a self-illumination map is a team colour mask, so both were dropped in favour of flat grey. A proper hull texture is artist work.
+- **Borrowed sub-macros.** The bridge and cargo bay bind Argon macros, so the interior is Argon.
+- **Balance is unvalidated.** 2700 m, 392k hull, thirty-six turrets. Nobody has fought with it.
 
 ## Publishing to the Steam Workshop
 
@@ -287,8 +314,6 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for setup, code style, validation and relea
 
 The code in this repository is MIT licensed — see [`LICENSE`](LICENSE).
 
-The hull mesh originates in the **SOASE Andromeda Mod** by **CKYRules** and is used with the author's
-permission. It is not covered by the MIT licence above, and it is not redistributed in this
-repository — see [Mesh source](#mesh-source).
+The hull mesh was modelled by **[grannyte](https://www.reddit.com/user/grannyte/)** and is used with their permission. It is not covered by the MIT licence above — see [Mesh source](#mesh-source).
 
 This is a **non-commercial fan project**. Andromeda, the Andromeda Ascendant and all related names and designs belong to the rights holders of the series. X4: Foundations and its file formats belong to Egosoft GmbH. This project is not affiliated with, sponsored by or endorsed by either, and is not for sale.

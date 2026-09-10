@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <macros>
-  <macro name="weapon_and_xl_lance_01_mk1_macro" class="weapon">
-    <component ref="weapon_kha_xl_battleship_01_mk1"/>
-    <properties>
-      <identification name="{90001,1020}" basename="{90001,1021}" description="{90001,1022}"/>
-      <bullet class="bullet_kha_xl_beam_01_mk1_macro"/>
-      <heat overheat="10000" cooldelay="0" coolrate="1000" reenable="1"/>
-      <hull noscrap="1"/>
-      <effects>
-        <firing stop="stopshooting_kha_xl_beam_01_mk1"/>
-      </effects>
-      <sounds>
-        <firing ref="weapon_kha_xl_beam_01_mk1_charge"/>
-      </sounds>
-      <weapon angle="15"/>
-    </properties>
-  </macro>
+    <macro name="weapon_and_xl_lance_01_mk1_macro" class="weapon">
+        <component ref="weapon_kha_xl_battleship_01_mk1"/>
+        <properties>
+            <identification name="{90001,1020}" basename="{90001,1021}" description="{90001,1022}"/>
+            <bullet class="bullet_kha_xl_beam_01_mk1_macro"/>
+            <heat overheat="10000" cooldelay="0" coolrate="1000" reenable="1"/>
+            <hull noscrap="1"/>
+            <effects>
+                <firing stop="stopshooting_kha_xl_beam_01_mk1"/>
+            </effects>
+            <sounds>
+                <firing ref="weapon_kha_xl_beam_01_mk1_charge"/>
+            </sounds>
+            <weapon angle="15"/>
+        </properties>
+    </macro>
 </macros>

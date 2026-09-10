@@ -30,34 +30,33 @@ Publishing stages a separate copy inside the game's extensions directory. The re
 
 ## Mesh conversion
 
-`soase_import.py` reads Ironclad's text mesh format, an indentation-nested key-value tree whose blocks
-repeat by name. It refuses binary meshes; convert those with ConvertX first. Sins uses X right, Y up
-and Z forward, so the converter maps `(x, y, z)` to `(-x, z, y)`: swapping the two axes alone would
-mirror the model, and negating X restores the handedness. Triangle winding is reversed to match, and
-the V coordinate is flipped from the DirectX convention OBJ does not use. Hardpoint orientations are
-transformed row by row; in this source they are all identity and carry no facing information.
+`soase_import.py` reads Ironclad's text mesh format, an indentation-nested key-value tree whose blocks repeat by name. It refuses binary meshes; convert those with ConvertX first. Sins uses X right, Y up and Z forward, so the converter maps `(x, y, z)` to `(-x, z, y)`: swapping the two axes alone would mirror the model, and negating X restores the handedness. Triangle winding is reversed to match, and the V coordinate is flipped from the DirectX convention OBJ does not use. Hardpoint orientations are transformed row by row; in this source they are all identity and carry no facing information.
 
-`andromeda_import.py` imports the OBJ with `forward_axis="Y"` and `up_axis="Z"` so Blender's own axis
-conversion stays out of the way, then scales, centres, decimates and places connections. Keep both
-scripts self-contained: they are pasted into Blender's text editor, not installed as modules.
+`andromeda_import.py` imports the OBJ with `forward_axis="Y"` and `up_axis="Z"` so Blender's own axis conversion stays out of the way, then scales, centres, decimates and places connections. Keep both scripts self-contained: they are pasted into Blender's text editor, not installed as modules.
+
+## Reproducing the pipeline
+
+README.md documents the four stages end to end. What belongs here are the traps, which cost the most time to find:
+
+- The exporter refuses any `.blend` whose path lacks the literal string `[assets]`, and reports the refusal only as an info message alongside a success message.
+- `XUConverter.exe` is the tool the community guide calls "P1 Converter Local". It watches its source folder, so nothing converts until a file changes after it starts.
+- Under Proton it exits silently with no output. Two DLLs are the cause: Proton's builtin `CONCRT140`
+  lacks `?PPLParallelForEventGuid@Concurrency` and `mfc140` is missing. Plain Wine with
+  `winetricks -q vcrun2022` runs it, and it then prints a usage line proving it takes arguments.
+- Extension files are read off a case-sensitive filesystem. The localisation file must be
+  `t/0001-l044.xml`, lowercase, as it is inside the game's own catalogues.
+- Textures must be DXT5 with mipmaps, gzipped. Uncompressed dds is ignored without a word in the log.
 
 ## Exporting to xmf
 
-The Egosoft Blender Mod Tools install four Blender 4.2 extensions and `XUConverter.exe`. Install the
-extensions from their zips with `blender --command extension install-file -r user_default -e <zip>`;
-the export operator is `ego_tools.export_data`, and it runs headless. The `.blend` path must contain
-the literal string `[assets]` or the operator refuses to run. Set `scene.classAttr` to `ship_xl`
+The Egosoft Blender Mod Tools install four Blender 4.2 extensions and `XUConverter.exe`. Install the extensions from their zips with `blender --command extension install-file -r user_default -e <zip>`; the export operator is `ego_tools.export_data`, and it runs headless. The `.blend` path must contain the literal string `[assets]` or the operator refuses to run. Set `scene.classAttr` to `ship_xl`
 before exporting.
 
-Connection empties are tagged, not named: X4 reads the tags, and the names are free. The exporter
-takes tags from registered property groups, and falls back to an `extratags` string property, which is
-what a headless build uses because the add-on property groups are not registered under
+Connection empties are tagged, not named: X4 reads the tags, and the names are free. The exporter takes tags from registered property groups, and falls back to an `extratags` string property, which is what a headless build uses because the add-on property groups are not registered under
 `--factory-startup`.
 
-`XUConverter.exe` takes a source and a destination folder as arguments and then watches the source. It
-does not run under Proton: Proton's builtin `CONCRT140` lacks symbols the converter imports, and
-`mfc140` is missing entirely. Run it under plain Wine instead, in a container with the real Microsoft
-runtime installed by `winetricks -q vcrun2022`. Conversion triggers on file changes, so rewrite the
+`XUConverter.exe` takes a source and a destination folder as arguments and then watches the source. It does not run under Proton: Proton's builtin `CONCRT140` lacks symbols the converter imports, and
+`mfc140` is missing entirely. Run it under plain Wine instead, in a container with the real Microsoft runtime installed by `winetricks -q vcrun2022`. Conversion triggers on file changes, so rewrite the
 `.dae` after the watcher starts.
 
 ## Generator geometry

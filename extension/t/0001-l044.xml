@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <language id="44">
-  <page id="90001" title="Andromeda Ascendant" descr="Ship names and descriptions" voice="no">
-    <t id="1001">Andromeda Ascendant</t>
-    <t id="1002">Andromeda</t>
-    <t id="1003">Glorious Heritage class heavy cruiser of the Systems Commonwealth High Guard. Flagship of a fleet that no longer exists.</t>
-    <t id="1010">Slipstream Drive</t>
-    <t id="1011">Slipstream</t>
-    <t id="1012">SSD</t>
-    <t id="1013">Commonwealth slipstream drive, integrated into the hull rather than mounted on it. No external nacelle.</t>
-    <t id="1020">Point Singularity Projector</t>
-    <t id="1021">Singularity Projector</t>
-    <t id="1022">Forward lance mounted at the tip of each nacelle arm. Fires a sustained energy beam.</t>
-  </page>
+    <page id="90001" title="Andromeda Ascendant" descr="Ship names and descriptions" voice="no">
+        <t id="1001">Andromeda Ascendant</t>
+        <t id="1002">Andromeda</t>
+        <t id="1003">Glorious Heritage class heavy cruiser of the Systems Commonwealth High Guard. Flagship of a fleet that no longer exists.</t>
+        <t id="1010">Slipstream Drive</t>
+        <t id="1011">Slipstream</t>
+        <t id="1012">SSD</t>
+        <t id="1013">Commonwealth slipstream drive, integrated into the hull rather than mounted on it. No external nacelle.</t>
+        <t id="1020">Point Singularity Projector</t>
+        <t id="1021">Singularity Projector</t>
+        <t id="1022">Forward lance mounted at the tip of each nacelle arm. Fires a sustained energy beam.</t>
+    </page>
 </language>

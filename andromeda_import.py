@@ -12,6 +12,7 @@ SOURCE_DIRECTORY = Path.home() / "x4mod/source"
 SOURCE_STEM = "XMC"
 SHIP_LENGTH = 2700.0
 MATERIAL_NAME = "andromeda.andromeda_hull"
+HULL_VERTEX_COLOUR = (0.72, 0.73, 0.75, 1.0)
 LOD_RATIO = (
     ("part_main", 1.0),
     ("part_main.LOD1", 0.55),
@@ -73,8 +74,11 @@ def normalize(mesh_object):
 def prepare_channels(mesh_object):
     for layer in mesh_object.data.uv_layers:
         layer.name = "uv1"
-    if 0 == len(mesh_object.data.color_attributes):
-        mesh_object.data.color_attributes.new(name="col", type="BYTE_COLOR", domain="CORNER")
+    for existing in list(mesh_object.data.color_attributes):
+        mesh_object.data.color_attributes.remove(existing)
+    colour = mesh_object.data.color_attributes.new(name="col", type="BYTE_COLOR", domain="CORNER")
+    for entry in colour.data:
+        entry.color = HULL_VERTEX_COLOUR
     mesh_object.data.materials.clear()
     mesh_object.data.materials.append(bpy.data.materials.new(MATERIAL_NAME))
     for polygon in mesh_object.data.polygons:

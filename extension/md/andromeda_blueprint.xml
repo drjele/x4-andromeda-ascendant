@@ -3,11 +3,12 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:noNamespaceSchemaLocation="md.xsd"
 >
-  <cues>
-    <cue name="GrantBlueprint">
-      <actions>
-        <add_blueprints wares="[ware.ship_and_xl_cruiser_01_a, ware.engine_and_xl_hidden_01_mk1, ware.weapon_and_xl_lance_01_mk1]"/>
-      </actions>
-    </cue>
-  </cues>
+    <cues>
+        <cue name="GrantBlueprint">
+            <actions>
+                <debug_text text="'ANDROMEDA: granting blueprints'" filter="general"/>
+                <add_blueprints wares="[ware.ship_and_xl_cruiser_01_a, ware.engine_and_xl_hidden_01_mk1, ware.weapon_and_xl_lance_01_mk1]"/>
+            </actions>
+        </cue>
+    </cues>
 </mdscript>
