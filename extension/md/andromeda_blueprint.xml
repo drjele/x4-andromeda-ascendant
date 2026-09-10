@@ -6,7 +6,7 @@
   <cues>
     <cue name="GrantBlueprint">
       <actions>
-        <add_blueprints wares="[ware.ship_and_xl_cruiser_01_a]"/>
+        <add_blueprints wares="[ware.ship_and_xl_cruiser_01_a, ware.engine_and_xl_hidden_01_mk1, ware.weapon_and_xl_lance_01_mk1]"/>
       </actions>
     </cue>
   </cues>
