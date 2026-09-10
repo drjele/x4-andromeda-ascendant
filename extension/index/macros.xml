@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<diff>
+  <add sel="/index">
+    <entry name="ship_and_xl_cruiser_01_a_macro"
+           value="extensions\andromeda_ascendant\assets\units\size_xl\macros\ship_and_xl_cruiser_01_a_macro"
+    />
+  </add>
+</diff>

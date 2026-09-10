@@ -22,3 +22,10 @@ venv/
 
 *.cat
 *.dat
+
+*.rar
+*.mesh
+*.dds
+*.tga
+*.obj
+*.mtl

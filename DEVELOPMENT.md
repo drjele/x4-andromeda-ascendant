@@ -28,6 +28,38 @@ Publishing stages a separate copy inside the game's extensions directory. The re
 
 `content.xml` uses an integer version multiplied by 100 and an ISO release date. The date matches the corresponding released entry in `CHANGELOG.md`. Development changes belong under `Unreleased`; they do not advance the manifest's release version or date. An unreleased scaffold may retain its initial creation date until its first release. Keep existing extension ids stable.
 
+## Mesh conversion
+
+`soase_import.py` reads Ironclad's text mesh format, an indentation-nested key-value tree whose blocks
+repeat by name. It refuses binary meshes; convert those with ConvertX first. Sins uses X right, Y up
+and Z forward, so the converter maps `(x, y, z)` to `(-x, z, y)`: swapping the two axes alone would
+mirror the model, and negating X restores the handedness. Triangle winding is reversed to match, and
+the V coordinate is flipped from the DirectX convention OBJ does not use. Hardpoint orientations are
+transformed row by row; in this source they are all identity and carry no facing information.
+
+`andromeda_import.py` imports the OBJ with `forward_axis="Y"` and `up_axis="Z"` so Blender's own axis
+conversion stays out of the way, then scales, centres, decimates and places connections. Keep both
+scripts self-contained: they are pasted into Blender's text editor, not installed as modules.
+
+## Exporting to xmf
+
+The Egosoft Blender Mod Tools install four Blender 4.2 extensions and `XUConverter.exe`. Install the
+extensions from their zips with `blender --command extension install-file -r user_default -e <zip>`;
+the export operator is `ego_tools.export_data`, and it runs headless. The `.blend` path must contain
+the literal string `[assets]` or the operator refuses to run. Set `scene.classAttr` to `ship_xl`
+before exporting.
+
+Connection empties are tagged, not named: X4 reads the tags, and the names are free. The exporter
+takes tags from registered property groups, and falls back to an `extratags` string property, which is
+what a headless build uses because the add-on property groups are not registered under
+`--factory-startup`.
+
+`XUConverter.exe` takes a source and a destination folder as arguments and then watches the source. It
+does not run under Proton: Proton's builtin `CONCRT140` lacks symbols the converter imports, and
+`mfc140` is missing entirely. Run it under plain Wine instead, in a container with the real Microsoft
+runtime installed by `winetricks -q vcrun2022`. Conversion triggers on file changes, so rewrite the
+`.dae` after the watcher starts.
+
 ## Generator geometry
 
 The axis convention is +Y forward and +Z up. Hull profile rows hold position, half-width, half-height and vertical offset as fractions of SHIP_LENGTH. Position 0 is the prow and 1 the stern. Separate superellipse exponents give the belly a flatter section than the deck. See README.md for generator use and parameters.

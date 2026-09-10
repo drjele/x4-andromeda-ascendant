@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Exported on 2026-09-10 14:29:36 from Blender-->
+<components>
+  <component name="ship_and_xl_cruiser_01" class="ship_xl">
+    <source geometry="extensions\andromeda_ascendant\assets\units\size_xl\ship_and_xl_cruiser_01_data" />
+    <layers>
+      <layer />
+    </layers>
+    <connections>
+      <connection name="space" tags="ship_xl ship" />
+      <connection name="position" tags="position" value="1" />
+      <connection name="con_cockpit" tags=" cockpit">
+        <offset>
+          <position x="0" y="93.66498" z="292.5" />
+        </offset>
+      </connection>
+      <connection name="con_dock_xs" tags=" dock_xs">
+        <offset>
+          <position x="0" y="0" z="-357.5" />
+        </offset>
+      </connection>
+      <connection name="con_dockingbay_011" tags=" dockingbay">
+        <offset>
+          <position x="-122.206" y="-0.2185258" z="-0.1325076" />
+        </offset>
+      </connection>
+      <connection name="con_dockingbay_012" tags=" dockingbay">
+        <offset>
+          <position x="122.206" y="-0.2185258" z="-0.1324867" />
+        </offset>
+      </connection>
+      <connection name="con_engine_01" tags=" engine">
+        <offset>
+          <position x="-39" y="0" z="-650.0001" />
+        </offset>
+      </connection>
+      <connection name="con_engine_02" tags=" engine">
+        <offset>
+          <position x="39" y="0" z="-650.0001" />
+        </offset>
+      </connection>
+      <connection name="con_scanner_01" tags=" scanner">
+        <offset>
+          <position x="0" y="0" z="487.5001" />
+        </offset>
+      </connection>
+      <connection name="con_shield_01" tags=" shield">
+        <offset>
+          <position x="0" y="51.08999" z="130" />
+        </offset>
+      </connection>
+      <connection name="con_shipstorage01" tags=" storage">
+        <offset>
+          <position x="0" y="0" z="-227.5" />
+        </offset>
+      </connection>
+      <connection name="con_storage01" tags=" storage" />
+      <connection name="con_turret_001" tags=" turret">
+        <offset>
+          <position x="-84.08088" y="6.076467" z="95.85526" />
+        </offset>
+      </connection>
+      <connection name="con_turret_002" tags=" turret">
+        <offset>
+          <position x="-70.94324" y="-35.93166" z="-0.1325038" />
+        </offset>
+      </connection>
+      <connection name="con_turret_003" tags=" turret">
+        <offset>
+          <position x="-47.2732" y="-84.99434" z="83.12737" />
+        </offset>
+      </connection>
+      <connection name="con_turret_004" tags=" turret">
+        <offset>
+          <position x="84.08083" y="6.076467" z="95.85528" />
+        </offset>
+      </connection>
+      <connection name="con_turret_005" tags=" turret">
+        <offset>
+          <position x="70.94323" y="-35.93166" z="-0.1324905" />
+        </offset>
+      </connection>
+      <connection name="con_turret_006" tags=" turret">
+        <offset>
+          <position x="47.27321" y="-84.99434" z="83.12739" />
+        </offset>
+      </connection>
+      <connection name="con_turret_007" tags=" turret">
+        <offset>
+          <position x="-183.9269" y="42.83357" z="-165.5742" />
+        </offset>
+      </connection>
+      <connection name="con_turret_008" tags=" turret">
+        <offset>
+          <position x="-78.69691" y="-98.54061" z="20.88404" />
+        </offset>
+      </connection>
+      <connection name="con_turret_009" tags=" turret">
+        <offset>
+          <position x="183.9269" y="42.83357" z="-165.5742" />
+        </offset>
+      </connection>
+      <connection name="con_turret_010" tags=" turret">
+        <offset>
+          <position x="78.69694" y="-98.54061" z="20.88405" />
+        </offset>
+      </connection>
+      <connection name="ConnectionForpart_main" tags="part ">
+        <parts>
+          <part name="part_main" wreck="part_main_wreck">
+            <lods>
+              <lod index="0">
+                <materials>
+                  <material id="1" ref="andromeda.andromeda_hull" />
+                </materials>
+              </lod>
+              <lod index="1">
+                <materials>
+                  <material id="1" ref="andromeda.andromeda_hull" />
+                </materials>
+              </lod>
+              <lod index="2">
+                <materials>
+                  <material id="1" ref="andromeda.andromeda_hull" />
+                </materials>
+              </lod>
+              <lod index="3">
+                <materials>
+                  <material id="1" ref="andromeda.andromeda_hull" />
+                </materials>
+              </lod>
+            </lods>
+            <size>
+              <max x="377.8889" y="170.3" z="650.0001" />
+              <center x="-7.629395e-06" y="0" z="0" />
+            </size>
+          </part>
+        </parts>
+      </connection>
+    </connections>
+  </component>
+</components>
