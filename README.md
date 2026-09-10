@@ -47,9 +47,10 @@ Restart X4 after installing or updating. To remove the manual installation:
 X4's own `.xmf` format through the official Egosoft toolchain, with LOD0-3, collision, wreck and Jolt
 physics meshes.
 
-Restart X4 after installing. The blueprint is granted by [`extension/md/andromeda_blueprint.xml`](extension/md/andromeda_blueprint.xml),
-so the ship can be built at a player shipyard, and bought at Argon and Antigone yards. It needs the
-capital ship licence, like any other XL hull.
+Restart X4 after installing. The ship is **player-only**: the ware names the player as its sole
+owner, so no faction builds or sells it and NPC fleets never fill up with Andromedas. The blueprint is
+granted by [`extension/md/andromeda_blueprint.xml`](extension/md/andromeda_blueprint.xml), so it can
+be built at a player shipyard and nowhere else.
 
 ## Mesh source
 

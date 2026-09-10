@@ -17,8 +17,7 @@
       </production>
       <component ref="ship_and_xl_cruiser_01_a_macro"/>
       <restriction licence="capitalship"/>
-      <owner faction="argon"/>
-      <owner faction="antigone"/>
+      <owner faction="player"/>
     </ware>
   </add>
 </diff>
