@@ -10,7 +10,7 @@ from mathutils import Vector
 
 SOURCE_DIRECTORY = Path.home() / "x4mod/source"
 SOURCE_STEM = "XMC"
-SHIP_LENGTH = 2422.0
+SHIP_LENGTH = 2700.0
 MATERIAL_NAME = "andromeda.andromeda_hull"
 LOD_RATIO = (
     ("part_main", 1.0),
@@ -29,6 +29,9 @@ SAMPLE_RADIUS = 0.035
 DORSAL_FACING = (0.0, 0.0, 0.0)
 VENTRAL_FACING = (math.pi, 0.0, 0.0)
 HULL_CORE_FRACTION = 0.12
+MOUNT_SINK = 0.004
+SHIELD_DORSAL_STATIONS = (0.72, 0.36, -0.02, -0.4)
+SHIELD_VENTRAL_STATIONS = (0.3, -0.3)
 
 
 def clear_scene():
@@ -164,7 +167,7 @@ def place_turrets(vertex):
             add_connection(
                 f"con_turret_{index:03d}",
                 TURRET_LARGE_TAGS,
-                point,
+                sink(point, upward),
                 1.6,
                 DORSAL_FACING if True == upward else VENTRAL_FACING,
                 group_for(point, upward),
@@ -184,7 +187,7 @@ def place_turrets(vertex):
                 add_connection(
                     f"con_turret_{index:03d}",
                     TURRET_MEDIUM_TAGS,
-                    point,
+                    sink(point, upward),
                     1.0,
                     DORSAL_FACING if True == upward else VENTRAL_FACING,
                     group_for(point, upward),
@@ -199,12 +202,17 @@ def place_turrets(vertex):
             add_connection(
                 f"con_turret_{index:03d}",
                 TURRET_MEDIUM_TAGS,
-                point,
+                sink(point, True),
                 1.0,
                 DORSAL_FACING,
                 group_for(point, True),
             )
     return large_count, index - large_count
+
+
+def sink(point, upward):
+    depth = SHIP_LENGTH * MOUNT_SINK
+    return Vector((point[0], point[1], point[2] - depth if True == upward else point[2] + depth))
 
 
 def hull_core(vertex):
@@ -234,37 +242,35 @@ def place_fixed(vertex, points, factor, center):
             1.6,
         )
     shield_index = 0
-    for along in (0.75, 0.45, 0.15, -0.15, -0.45, -0.75):
-        shield_index += 1
+    for along in SHIELD_DORSAL_STATIONS:
         y = core_fore * along if 0.0 < along else core_aft * -along
         point = surface_at(vertex, 0.0, y, radius, True)
         if None is point:
-            point = Vector((0.0, y, 0.0))
+            continue
+        shield_index += 1
         add_connection(
             f"con_shieldgen_xl_{shield_index:02d}",
             SHIELD_LARGE_TAGS,
-            point,
+            sink(point, True),
             1.4,
             DORSAL_FACING,
             group_for(point, True),
         )
-    medium_index = 0
-    for along in (0.6, 0.2, -0.2, -0.6):
+    for along in SHIELD_VENTRAL_STATIONS:
         y = core_fore * along if 0.0 < along else core_aft * -along
-        for side in (-1.0, 1.0):
-            for upward in (True, False):
-                point = surface_at(vertex, side * SHIP_LENGTH * 0.05, y, radius, upward)
-                if None is point:
-                    continue
-                medium_index += 1
-                add_connection(
-                    f"con_shieldgen_m_{medium_index:02d}",
-                    SHIELD_MEDIUM_TAGS,
-                    point,
-                    1.0,
-                    DORSAL_FACING if True == upward else VENTRAL_FACING,
-                    group_for(point, upward),
-                )
+        point = surface_at(vertex, 0.0, y, radius, False)
+        if None is point:
+            continue
+        shield_index += 1
+        add_connection(
+            f"con_shieldgen_xl_{shield_index:02d}",
+            SHIELD_LARGE_TAGS,
+            sink(point, False),
+            1.4,
+            VENTRAL_FACING,
+            group_for(point, False),
+        )
+    medium_index = 0
     for cm_index, side in enumerate((-1.0, 1.0, -1.0, 1.0)):
         add_connection(
             f"con_countermeasure_{cm_index + 1:02d}",
