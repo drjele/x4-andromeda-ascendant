@@ -19,5 +19,26 @@
       <restriction licence="capitalship"/>
       <owner faction="player"/>
     </ware>
+    <ware id="engine_and_xl_hidden_01_mk1"
+          name="{90001,1010}"
+          description="{90001,1013}"
+          group="engines"
+          transport="equipment"
+          volume="1"
+          tags="engine equipment"
+    >
+      <price min="430000" average="478000" max="526000"/>
+      <production time="30" amount="1" method="default" name="{20206,101}">
+        <primary>
+          <ware ware="antimatterconverters" amount="196"/>
+          <ware ware="energycells" amount="50"/>
+          <ware ware="engineparts" amount="92"/>
+        </primary>
+      </production>
+      <component ref="engine_and_xl_hidden_01_mk1_macro"/>
+      <restriction licence="generaluseequipment"/>
+      <use threshold="0"/>
+      <owner faction="player"/>
+    </ware>
   </add>
 </diff>

@@ -4,5 +4,8 @@
     <entry name="ship_and_xl_cruiser_01_a_macro"
            value="extensions\andromeda_ascendant\assets\units\size_xl\macros\ship_and_xl_cruiser_01_a_macro"
     />
+    <entry name="engine_and_xl_hidden_01_mk1_macro"
+           value="extensions\andromeda_ascendant\assets\props\engines\macros\engine_and_xl_hidden_01_mk1_macro"
+    />
   </add>
 </diff>

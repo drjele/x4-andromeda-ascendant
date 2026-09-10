@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<macros>
+  <macro name="engine_and_xl_hidden_01_mk1_macro" class="engine">
+    <component ref="engine_and_xl_hidden_01_mk1"/>
+    <properties>
+      <identification name="{90001,1010}"
+                      basename="{90001,1011}"
+                      shortname="{90001,1012}"
+                      makerrace="argon"
+                      description="{90001,1013}"
+                      mk="1"
+      />
+      <boost duration="27" recharge="90" thrust="7.1" acceleration="4.3" attack="10" release="6" coast="1.2"/>
+      <travel charge="18" thrust="28.0" attack="91" release="22.5"/>
+      <thrust forward="11200" reverse="10600"/>
+      <hull max="21000" threshold="0.3"/>
+      <effects>
+        <traveling ref="gen_traveldrive_fx_xl"/>
+        <boosting ref="gen_xl_boosteffect_01"/>
+      </effects>
+      <sounds>
+        <enginedetail ref="enginedetail_ship_xl_01"/>
+      </sounds>
+      <decelerationcurve>
+        <point position="1.01" value="1"/>
+        <point position="1.25" value="3"/>
+        <point position="1.75" value="5"/>
+        <point position="2" value="10"/>
+        <point position="2.1" value="17"/>
+        <point position="2.4" value="25"/>
+      </decelerationcurve>
+      <strafecurve>
+        <point position="1.01" value="1"/>
+        <point position="1.25" value="3"/>
+        <point position="1.75" value="5"/>
+        <point position="2" value="12"/>
+        <point position="2.2" value="20"/>
+        <point position="2.4" value="30"/>
+      </strafecurve>
+    </properties>
+  </macro>
+</macros>
