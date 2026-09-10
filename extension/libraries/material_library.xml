@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<diff>
+  <add sel="/materiallibrary">
+    <collection name="andromeda">
+      <material name="andromeda_hull" shader="p1_complex_surface" blendmode="NONE" preview="none">
+        <properties>
+          <property type="BitMap"
+                    name="diffuse_map"
+                    value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_hull_diff"
+          />
+          <property type="BitMap"
+                    name="normal_map"
+                    value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_hull_normal"
+          />
+          <property type="BitMap"
+                    name="selfillumination_map"
+                    value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_hull_glow"
+          />
+          <property type="Float" name="diffuseStr" value="1.0"/>
+          <property type="Float" name="normalStr" value="0.9"/>
+          <property type="Float" name="environmentStr" value="1.0"/>
+          <property type="Float" name="Smoothness" value="0.55"/>
+          <property type="Float" name="Metallness" value="0.75"/>
+        </properties>
+      </material>
+    </collection>
+  </add>
+</diff>

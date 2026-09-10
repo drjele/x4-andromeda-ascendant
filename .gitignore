@@ -26,6 +26,7 @@ venv/
 *.rar
 *.mesh
 *.dds
+!extension/assets/textures/**/*.gz
 *.tga
 *.obj
 *.mtl
