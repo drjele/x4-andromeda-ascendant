@@ -58,12 +58,6 @@
       <connection ref="con_storage01">
         <macro ref="storage_arg_xl_carrier_01_a_macro" connection="ShipConnection"/>
       </connection>
-      <connection ref="con_shipstorage01">
-        <macro ref="shipstorage_gen_m_eight_macro" connection="object"/>
-      </connection>
-      <connection ref="con_dock_xs">
-        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component"/>
-      </connection>
     </connections>
   </macro>
 </macros>
