@@ -27,9 +27,9 @@
         <strafe value="0.3"/>
         <angular value="0.15"/>
       </jerk>
-      <explosiondamage value="1800" shield="9000" shielddisruption="10"/>
-      <storage missile="400" unit="24"/>
-      <hull max="264000"/>
+      <explosiondamage value="2400" shield="12000" shielddisruption="10"/>
+      <storage missile="640" unit="40"/>
+      <hull max="342000"/>
       <secrecy level="2"/>
       <steeringcurve>
         <point position="1.01" value="1"/>
@@ -40,16 +40,16 @@
         <point position="2.7" value="0.25"/>
       </steeringcurve>
       <purpose primary="fight"/>
-      <people capacity="135"/>
+      <people capacity="340"/>
       <sounds>
         <shipdetail ref="shipdetail_ship_xl_01"/>
       </sounds>
-      <physics mass="549.202">
+      <physics mass="618.0">
         <inertia pitch="2000" yaw="2000" roll="1350"/>
         <drag forward="189.84" reverse="759.362" horizontal="125" vertical="125" pitch="800" yaw="800" roll="800"/>
       </physics>
       <thruster tags="extralarge"/>
-      <ship type="carrier"/>
+      <ship type="battleship"/>
     </properties>
     <connections>
       <connection ref="con_cockpit">

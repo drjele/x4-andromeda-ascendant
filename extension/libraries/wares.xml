@@ -8,11 +8,11 @@
           volume="1"
           tags="ship"
     >
-      <price min="9800000" average="11530000" max="13260000"/>
-      <production time="520" amount="1" method="default" name="{20206,101}">
+      <price min="14200000" average="16700000" max="19200000"/>
+      <production time="700" amount="1" method="default" name="{20206,101}">
         <primary>
-          <ware ware="energycells" amount="3100"/>
-          <ware ware="hullparts" amount="10800"/>
+          <ware ware="energycells" amount="4300"/>
+          <ware ware="hullparts" amount="15400"/>
         </primary>
       </production>
       <component ref="ship_and_xl_cruiser_01_a_macro"/>
