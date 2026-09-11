@@ -354,8 +354,8 @@
             </connection>
             <connection name="con_turret_031" group="group_front_up_left" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="-109.2041" y="-39.50505" z="790.089" />
-                    <quaternion qx="0.2924689" qy="-0.7025042" qz="-0.4059639" qw="-0.5061058" />
+                    <position x="-109.77" y="-40.21502" z="790.2627" />
+                    <quaternion qx="0.2003776" qy="-0.7638757" qz="-0.2805676" qw="-0.5455498" />
                 </offset>
             </connection>
             <connection name="con_turret_032" group="group_front_up_right" tags=" turret medium standard missile hittable combat">
@@ -386,6 +386,30 @@
                 <offset>
                     <position x="227.383" y="294.9382" z="-841.8641" />
                     <quaternion qx="0.3792965" qy="-0.516301" qz="-0.2728525" qw="-0.7177179" />
+                </offset>
+            </connection>
+            <connection name="con_turret_integrated_01" group="group_mid_up_left" tags=" turret large andromeda hittable combat">
+                <offset>
+                    <position x="-383.6678" y="91.76409" z="-333.0285" />
+                    <quaternion qx="0" qy="0" qz="-0.2840154" qw="-0.9588197" />
+                </offset>
+            </connection>
+            <connection name="con_turret_integrated_02" group="group_mid_up_right" tags=" turret large andromeda hittable combat">
+                <offset>
+                    <position x="383.6723" y="91.76118" z="-333.0284" />
+                    <quaternion qx="0" qy="0" qz="0.2840154" qw="-0.9588197" />
+                </offset>
+            </connection>
+            <connection name="con_turret_integrated_03" group="group_mid_down_left" tags=" turret large andromeda hittable combat">
+                <offset>
+                    <position x="-160.8123" y="-196.0901" z="70.52124" />
+                    <quaternion qx="0" qy="0" qz="-0.9659258" qw="-0.2588192" />
+                </offset>
+            </connection>
+            <connection name="con_turret_integrated_04" group="group_mid_down_right" tags=" turret large andromeda hittable combat">
+                <offset>
+                    <position x="160.8076" y="-196.0927" z="70.52127" />
+                    <quaternion qx="0" qy="0" qz="0.9659258" qw="-0.2588191" />
                 </offset>
             </connection>
             <connection name="con_weapon_xl_01" tags=" combat extralarge andromeda weapon">

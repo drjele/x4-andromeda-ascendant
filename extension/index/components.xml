@@ -4,5 +4,6 @@
         <entry name="ship_and_xl_cruiser_01" value="extensions\andromeda_ascendant\assets\units\size_xl\ship_and_xl_cruiser_01" />
         <entry name="engine_and_xl_hidden_01_mk1" value="extensions\andromeda_ascendant\assets\props\engines\engine_and_xl_hidden_01_mk1" />
         <entry name="weapon_and_xl_lance_01_mk1" value="extensions\andromeda_ascendant\assets\props\weaponsystems\capital\weapon_and_xl_lance_01_mk1" />
+        <entry name="turret_and_l_twin_01_mk1" value="extensions\andromeda_ascendant\assets\props\weaponsystems\energy\turret_and_l_twin_01_mk1" />
     </add>
 </diff>

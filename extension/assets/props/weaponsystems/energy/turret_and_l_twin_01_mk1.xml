@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<components>
+    <component name="turret_and_l_twin_01_mk1" class="turret">
+        <source geometry="extensions\andromeda_ascendant\assets\props\weaponsystems\energy\turret_and_l_twin_01_mk1_data" />
+        <layers>
+            <layer />
+        </layers>
+        <connections>
+            <connection name="space" tags="turret" />
+            <connection name="position" tags="position" value="1" />
+            <connection name="con_aimtarget" tags=" aimtarget" />
+            <connection name="con_turret" tags=" component turret large andromeda combat" />
+            <connection name="ConnectionForpart_socket" tags="part ">
+                <parts>
+                    <part name="part_socket">
+                        <lods>
+                            <lod index="0">
+                                <materials>
+                                    <material id="1" ref="andromeda.andromeda_hull" />
+                                </materials>
+                            </lod>
+                        </lods>
+                        <size>
+                            <max x="32.09639" y="32.09639" z="32.0964" />
+                            <center x="5.722046e-06" y="-19.75463" z="-10.30085" />
+                        </size>
+                    </part>
+                </parts>
+            </connection>
+            <connection name="ConnectionForpart_yaw" tags="iklink part " parent="part_socket">
+                <restrictions>
+                    <restriction type="rotation_y" />
+                </restrictions>
+                <parts>
+                    <part name="part_yaw">
+                        <lods>
+                            <lod index="0">
+                                <materials>
+                                    <material id="1" ref="andromeda.andromeda_hull" />
+                                </materials>
+                            </lod>
+                        </lods>
+                        <size>
+                            <max x="33.25229" y="19.24245" z="32.69676" />
+                            <center x="0.01264" y="4.28717" z="-10.30085" />
+                        </size>
+                    </part>
+                </parts>
+            </connection>
+            <connection name="ConnectionForpart_pitch" tags="iklink part " parent="part_yaw">
+                <restrictions>
+                    <restriction type="rotation_x">
+                        <limits>
+                            <min value="-4.99999985454646" />
+                            <max value="84.99999667351618" />
+                        </limits>
+                    </restriction>
+                </restrictions>
+                <parts>
+                    <part name="part_pitch">
+                        <lods>
+                            <lod index="0">
+                                <materials>
+                                    <material id="1" ref="andromeda.andromeda_hull" />
+                                </materials>
+                            </lod>
+                        </lods>
+                        <size>
+                            <max x="20.56157" y="4.323906" z="37.48957" />
+                            <center x="1.430511e-06" y="-3.099442e-06" z="37.48957" />
+                        </size>
+                    </part>
+                </parts>
+            </connection>
+            <connection name="con_laser_01" tags=" laser" parent="part_pitch">
+                <offset>
+                    <position x="-16.23766" y="4.705391e-07" z="75.47254" />
+                </offset>
+            </connection>
+            <connection name="con_laser_02" tags=" laser" parent="part_pitch">
+                <offset>
+                    <position x="16.23766" y="-4.705391e-07" z="75.47254" />
+                </offset>
+            </connection>
+        </connections>
+    </component>
+</components>

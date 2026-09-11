@@ -142,6 +142,31 @@ def validate(root=ROOT, game=None):
                     errors.append(f"{name}: engine and turret share {group}")
                 if tags & {"engine", "turret"} and "shield" not in tags:
                     errors.append(f"{name}: no shield in equipment group {group}")
+        if name == "turret_and_l_twin_01_mk1":
+            by_name = {c.get("name"): c for c in connections}
+            for part, parent, axis in (
+                ("part_yaw", "part_socket", "rotation_y"),
+                ("part_pitch", "part_yaw", "rotation_x"),
+            ):
+                joint = by_name.get(f"ConnectionFor{part}", ET.Element("missing"))
+                if (
+                    joint.get("parent") != parent
+                    or "iklink" not in joint.get("tags", "").split()
+                    or joint.find(f"./restrictions/restriction[@type='{axis}']") is None
+                ):
+                    errors.append(f"{name}: broken aiming joint {part}")
+            for index in (1, 2):
+                muzzle = by_name.get(f"con_laser_{index:02d}", ET.Element("missing"))
+                if (
+                    muzzle.get("parent") != "part_pitch"
+                    or "laser" not in muzzle.get("tags", "").split()
+                ):
+                    errors.append(f"{name}: muzzle must follow the pitch joint")
+            binding = by_name.get("con_turret", ET.Element("missing"))
+            if not {"component", "turret", "large", "andromeda"} <= set(
+                binding.get("tags", "").split()
+            ):
+                errors.append(f"{name}: missing exclusive turret binding")
         source = component.find("source")
         if source is None:
             continue
@@ -154,7 +179,16 @@ def validate(root=ROOT, game=None):
                 for material in lod.findall("./materials/material"):
                     if material.get("ref") not in materials:
                         errors.append(f"unknown local material: {material.get('ref')}")
-        for asset in ("part_main-collision.xmf", "part_main-hull.jcs", "part_main-mesh.jcs"):
+        collision_parts = (
+            ("part_socket", "part_yaw", "part_pitch")
+            if component.get("class") == "turret"
+            else ("part_main",)
+        )
+        for asset in (
+            f"{part}-{suffix}"
+            for part in collision_parts
+            for suffix in ("collision.xmf", "hull.jcs", "mesh.jcs")
+        ):
             path = directory / asset
             if not path.is_file() or path.stat().st_size == 0:
                 errors.append(f"missing collision/physics asset: {path}")

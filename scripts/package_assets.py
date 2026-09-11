@@ -49,8 +49,15 @@ def main():
             raise ValueError(f"export changes existing connection contract: {name}")
     additions = new_connections.keys() - old_connections.keys()
     allowed = {f"con_shieldgen_m_{i:03d}" for i in range(1, 15)}
+    integrated = {f"con_turret_integrated_{i:02d}" for i in range(1, 5)}
+    allowed |= integrated
     if not additions <= allowed or any(
-        new_connections[name][0] != frozenset(("medium", "shield", "hittable", "standard"))
+        new_connections[name][0]
+        != (
+            frozenset("turret large andromeda hittable combat".split())
+            if name in integrated
+            else frozenset(("medium", "shield", "hittable", "standard"))
+        )
         for name in additions
     ):
         raise ValueError("unexpected new equipment connections")

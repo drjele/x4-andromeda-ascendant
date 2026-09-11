@@ -1,65 +1,59 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <diff>
     <add sel="/wares">
-        <ware id="ship_and_xl_cruiser_01_a"
-              name="{90001,1001}"
-              description="{90001,1003}"
-              transport="ship"
-              volume="1"
-              tags="ship"
-        >
-            <price min="14200000" average="16700000" max="19200000"/>
+        <ware id="ship_and_xl_cruiser_01_a" name="{90001,1001}" description="{90001,1003}" transport="ship" volume="1" tags="ship">
+            <price min="14200000" average="16700000" max="19200000" />
             <production time="60" amount="1" method="default" name="{20206,101}">
                 <primary>
-                    <ware ware="energycells" amount="430"/>
-                    <ware ware="hullparts" amount="1540"/>
+                    <ware ware="energycells" amount="430" />
+                    <ware ware="hullparts" amount="1540" />
                 </primary>
             </production>
-            <component ref="ship_and_xl_cruiser_01_a_macro"/>
-            <restriction licence="capitalship"/>
-            <owner faction="player"/>
+            <component ref="ship_and_xl_cruiser_01_a_macro" />
+            <restriction licence="capitalship" />
+            <owner faction="player" />
         </ware>
-        <ware id="engine_and_xl_hidden_01_mk1"
-              name="{90001,1010}"
-              description="{90001,1013}"
-              group="engines"
-              transport="equipment"
-              volume="1"
-              tags="engine equipment"
-        >
-            <price min="430000" average="478000" max="526000"/>
+        <ware id="engine_and_xl_hidden_01_mk1" name="{90001,1010}" description="{90001,1013}" group="engines" transport="equipment" volume="1" tags="engine equipment">
+            <price min="430000" average="478000" max="526000" />
             <production time="30" amount="1" method="default" name="{20206,101}">
                 <primary>
-                    <ware ware="antimatterconverters" amount="196"/>
-                    <ware ware="energycells" amount="50"/>
-                    <ware ware="engineparts" amount="92"/>
+                    <ware ware="antimatterconverters" amount="196" />
+                    <ware ware="energycells" amount="50" />
+                    <ware ware="engineparts" amount="92" />
                 </primary>
             </production>
-            <component ref="engine_and_xl_hidden_01_mk1_macro"/>
-            <restriction licence="generaluseequipment"/>
-            <use threshold="0"/>
-            <owner faction="player"/>
+            <component ref="engine_and_xl_hidden_01_mk1_macro" />
+            <restriction licence="generaluseequipment" />
+            <use threshold="0" />
+            <owner faction="player" />
         </ware>
-        <ware id="weapon_and_xl_lance_01_mk1"
-              name="{90001,1020}"
-              description="{90001,1022}"
-              group="weapons"
-              transport="equipment"
-              volume="1"
-              tags="equipment weapon"
-        >
-            <price min="1850000" average="2180000" max="2510000"/>
+        <ware id="weapon_and_xl_lance_01_mk1" name="{90001,1020}" description="{90001,1022}" group="weapons" transport="equipment" volume="1" tags="equipment weapon">
+            <price min="1850000" average="2180000" max="2510000" />
             <production time="60" amount="1" method="default" name="{20206,101}">
                 <primary>
-                    <ware ware="advancedcomposites" amount="180"/>
-                    <ware ware="energycells" amount="220"/>
-                    <ware ware="fieldcoils" amount="140"/>
+                    <ware ware="advancedcomposites" amount="180" />
+                    <ware ware="energycells" amount="220" />
+                    <ware ware="fieldcoils" amount="140" />
                 </primary>
             </production>
-            <component ref="weapon_and_xl_lance_01_mk1_macro"/>
-            <restriction licence="militaryequipment"/>
-            <use threshold="0"/>
-            <owner faction="player"/>
+            <component ref="weapon_and_xl_lance_01_mk1_macro" />
+            <restriction licence="militaryequipment" />
+            <use threshold="0" />
+            <owner faction="player" />
+        </ware>
+        <ware id="turret_and_l_twin_01_mk1" name="{90001,1040}" description="{90001,1042}" group="turrets" transport="equipment" volume="1" tags="equipment turret">
+            <price min="180000" average="220000" max="260000" />
+            <production time="30" amount="1" method="default" name="{20206,101}">
+                <primary>
+                    <ware ware="energycells" amount="60" />
+                    <ware ware="turretcomponents" amount="45" />
+                    <ware ware="advancedcomposites" amount="30" />
+                </primary>
+            </production>
+            <component ref="turret_and_l_twin_01_mk1_macro" />
+            <restriction licence="militaryequipment" />
+            <use threshold="0" />
+            <owner faction="player" />
         </ware>
     </add>
 </diff>

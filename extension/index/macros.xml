@@ -1,14 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <diff>
     <add sel="/index">
-        <entry name="ship_and_xl_cruiser_01_a_macro"
-               value="extensions\andromeda_ascendant\assets\units\size_xl\macros\ship_and_xl_cruiser_01_a_macro"
-        />
-        <entry name="engine_and_xl_hidden_01_mk1_macro"
-               value="extensions\andromeda_ascendant\assets\props\engines\macros\engine_and_xl_hidden_01_mk1_macro"
-        />
-        <entry name="weapon_and_xl_lance_01_mk1_macro"
-               value="extensions\andromeda_ascendant\assets\props\weaponsystems\capital\macros\weapon_and_xl_lance_01_mk1_macro"
-        />
+        <entry name="ship_and_xl_cruiser_01_a_macro" value="extensions\andromeda_ascendant\assets\units\size_xl\macros\ship_and_xl_cruiser_01_a_macro" />
+        <entry name="engine_and_xl_hidden_01_mk1_macro" value="extensions\andromeda_ascendant\assets\props\engines\macros\engine_and_xl_hidden_01_mk1_macro" />
+        <entry name="weapon_and_xl_lance_01_mk1_macro" value="extensions\andromeda_ascendant\assets\props\weaponsystems\capital\macros\weapon_and_xl_lance_01_mk1_macro" />
+        <entry name="turret_and_l_twin_01_mk1_macro" value="extensions\andromeda_ascendant\assets\props\weaponsystems\energy\macros\turret_and_l_twin_01_mk1_macro" />
     </add>
 </diff>

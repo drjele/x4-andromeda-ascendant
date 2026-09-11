@@ -90,3 +90,41 @@ class ExtensionTests(unittest.TestCase):
         errors = VALIDATOR.validate(self.root)
         self.assertTrue(any("engine and turret share" in error for error in errors))
         self.assertTrue(any("no shield" in error for error in errors))
+
+    def test_integrated_turrets_are_four_exclusive_slots(self):
+        import xml.etree.ElementTree as ET
+
+        tree = ET.parse(self.root / "assets/units/size_xl/ship_and_xl_cruiser_01.xml")
+        mounts = [
+            c
+            for c in tree.findall(".//connections/connection")
+            if c.get("name", "").startswith("con_turret_integrated_")
+        ]
+        self.assertEqual(len(mounts), 4)
+        for mount in mounts:
+            self.assertEqual(
+                set(mount.get("tags").split()),
+                {"turret", "large", "andromeda", "hittable", "combat"},
+            )
+
+    def test_broken_turret_joint_is_rejected(self):
+        import xml.etree.ElementTree as ET
+
+        path = self.root / "assets/props/weaponsystems/energy/turret_and_l_twin_01_mk1.xml"
+        tree = ET.parse(path)
+        tree.find(".//connection[@name='ConnectionForpart_yaw']").set("tags", "part")
+        tree.write(path)
+        self.assertTrue(
+            any("broken aiming joint" in error for error in VALIDATOR.validate(self.root))
+        )
+
+    def test_disconnected_turret_muzzle_is_rejected(self):
+        import xml.etree.ElementTree as ET
+
+        path = self.root / "assets/props/weaponsystems/energy/turret_and_l_twin_01_mk1.xml"
+        tree = ET.parse(path)
+        tree.find(".//connection[@name='con_laser_01']").set("parent", "part_socket")
+        tree.write(path)
+        self.assertTrue(
+            any("muzzle must follow" in error for error in VALIDATOR.validate(self.root))
+        )

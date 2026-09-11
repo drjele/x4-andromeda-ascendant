@@ -438,7 +438,9 @@ def prepare_channels(mesh_object):
         for entry in colour.data:
             entry.color = value
     mesh_object.data.materials.clear()
-    mesh_object.data.materials.append(bpy.data.materials.new(MATERIAL_NAME))
+    mesh_object.data.materials.append(
+        (bpy.data.materials.get(MATERIAL_NAME) or bpy.data.materials.new(MATERIAL_NAME))
+    )
     for polygon in mesh_object.data.polygons:
         polygon.use_smooth = True
 
@@ -663,6 +665,10 @@ def main():
     clear_scene()
     source = import_source()
     repair_winding(source)
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from andromeda_turrets import TAGS, remove_from_hull
+
+    turret_stations = remove_from_hull(source)
     factor, center = normalize(source)
     prepare_channels(source)
     made = build_parts(source)
@@ -673,6 +679,15 @@ def main():
         (SOURCE_DIRECTORY / f"{SOURCE_STEM}_points.json").read_text(encoding="utf-8")
     )
     place_mounts(surface)
+    for index, (pivot, frame) in enumerate(turret_stations, 1):
+        location = (pivot - center) * factor
+        add_connection(
+            f"con_turret_integrated_{index:02d}",
+            TAGS,
+            location,
+            facing=frame.to_euler(),
+            group=group_for(location, frame[2][2] > 0),
+        )
     docks = place_fixed(vertex, points, factor, center, surface)
     if hasattr(bpy.context.scene, "classAttr"):
         bpy.context.scene.classAttr = "ship_xl"
@@ -682,7 +697,7 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(option.target))
     print(f"andromeda: {SHIP_LENGTH:.0f} m, scale {factor:.4f}")
     print(
-        f"andromeda: 6 large turrets, 30 medium turrets, 4 XL shields, 14 local shields, {docks} docking bays"
+        f"andromeda: 6 standard large turrets, 4 integrated twin turrets, 30 medium turrets, 4 XL shields, 14 local shields, {docks} docking bays"
     )
     for item in made:
         print(f"  {item.name}: {len(item.data.polygons)} faces")

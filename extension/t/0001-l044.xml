@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <language id="44">
     <page id="90001" title="Andromeda Ascendant" descr="Ship names and descriptions" voice="no">
         <t id="1001">Andromeda Ascendant</t>
@@ -12,5 +12,8 @@
         <t id="1021">Singularity Projector</t>
         <t id="1022">Forward lance mounted at the tip of each nacelle arm. Commonwealth adaptation of the Kha'ak Ravager heavy beam; compatible only with Andromeda mounts.</t>
         <t id="1030">Andromeda</t>
+        <t id="1040">High Guard L Twin Beam Turret Mk1</t>
+        <t id="1041">Twin Beam</t>
+        <t id="1042">Articulated twin beam turret built from Andromeda's original integrated gun assemblies. Compatible only with its four dedicated mounts.</t>
     </page>
 </language>
