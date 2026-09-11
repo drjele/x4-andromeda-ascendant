@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_ROOT/lib/find_x4.sh"
+source "$REPO_ROOT/lib/extension.sh"
 
 WORKSHOP_ID_FILE="$REPO_ROOT/steam/workshop-id"
 
@@ -100,24 +101,13 @@ TOOL="$(find_workshop_tool)" || {
 or set X_TOOLS_PATH to the directory holding it"
 }
 
-EXTENSION_ID="$(extension_id "$REPO_ROOT/extension/content.xml")"
-[[ -n "$EXTENSION_ID" ]] || die "could not read the extension id out of extension/content.xml"
-STAGE="$GAME_PATH/extensions/$EXTENSION_ID"
+prepare_extension_target
+STAGE="$TARGET"
 [[ -f "$REPO_ROOT/extension/preview.jpg" ]] || die "extension/preview.jpg is missing"
-
-echo "game:  $GAME_PATH"
-echo "tool:  $TOOL"
-echo "stage: $STAGE"
-
-rm -rf -- "$STAGE"
-mkdir -p -- "$STAGE"
-cp -r -- "$REPO_ROOT/extension/." "$STAGE/"
-
+WORKSHOP_ID=""
 if [[ -f "$WORKSHOP_ID_FILE" ]]; then
-    WORKSHOP_ID="$(tr -cd '0-9' <"$WORKSHOP_ID_FILE")"
-    [[ -n "$WORKSHOP_ID" ]] || die "$WORKSHOP_ID_FILE holds no digits"
-    sed -i "s/id=\"$EXTENSION_ID\"/id=\"ws_$WORKSHOP_ID\"/" "$STAGE/content.xml"
-    echo "item:  ws_$WORKSHOP_ID"
+    WORKSHOP_ID="$(cat "$WORKSHOP_ID_FILE")"
+    [[ "$WORKSHOP_ID" =~ ^[1-9][0-9]*$ ]] || die "$WORKSHOP_ID_FILE must contain one numeric Workshop id"
 fi
 
 run_tool() {
@@ -140,6 +130,29 @@ run_tool() {
     esac
 }
 
+case "$(uname -s)" in
+    MINGW* | MSYS* | CYGWIN* | Windows_NT) ;;
+    *)
+        find_proton >/dev/null || die "could not find Proton - set PROTON_PATH"
+        steam_root >/dev/null || die "could not find a Steam client installation"
+        ;;
+esac
+
+begin_extension_transaction
+stage_extension
+if [[ -n "$WORKSHOP_ID" ]]; then
+    python3 - "$STAGE/content.xml" "$WORKSHOP_ID" <<'PYXML'
+import sys
+import xml.etree.ElementTree as ET
+p = sys.argv[1]
+r = ET.parse(p)
+r.getroot().set("id", "ws_" + sys.argv[2])
+r.write(p, encoding="utf-8", xml_declaration=True)
+PYXML
+fi
+echo "game: $GAME_PATH"
+echo "stage: $STAGE"
+
 STAGE_WIN="$(win_path "$STAGE")"
 case "$(uname -s)" in
     MINGW* | MSYS* | CYGWIN* | Windows_NT) STAGE_WIN="$STAGE" ;;
@@ -151,18 +164,21 @@ else
     run_tool update -path "$STAGE_WIN" -buildcat -changenote "$CHANGENOTE"
 fi
 
-NEW_ID="$(extension_id "$STAGE/content.xml" | tr -cd '0-9')"
+NEW_ID="$(extension_id "$STAGE/content.xml")"
 if [[ "publish" == "$COMMAND" ]]; then
-    [[ -n "$NEW_ID" ]] || die "the tool did not write a Workshop id into $STAGE/content.xml - upload failed?"
+    [[ "$NEW_ID" =~ ^ws_([1-9][0-9]*)$ ]] || die "the tool did not write a valid Workshop id into $STAGE/content.xml"
+    NEW_ID="${BASH_REMATCH[1]}"
     mkdir -p -- "$(dirname "$WORKSHOP_ID_FILE")"
-    printf '%s\n' "$NEW_ID" >"$WORKSHOP_ID_FILE"
+    printf '%s\n' "$NEW_ID" >"$TRANSACTION/workshop-id"
+    mv -- "$TRANSACTION/workshop-id" "$WORKSHOP_ID_FILE"
     echo
     echo "published as https://steamcommunity.com/sharedfiles/filedetails/?id=$NEW_ID"
     echo "the item is hidden until you open that page, accept the Steam Workshop Legal Agreement"
     echo "and set the visibility to public"
     echo
     echo "commit the new $WORKSHOP_ID_FILE - ./publish.sh update needs it"
+else
+    [[ "$NEW_ID" == "ws_$WORKSHOP_ID" ]] || die "the tool changed the Workshop id during update"
 fi
 
-"$REPO_ROOT/install.sh" >/dev/null
-echo "local install restored to id=$EXTENSION_ID"
+echo "restoring previous local installation"

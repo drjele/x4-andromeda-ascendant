@@ -1,27 +1,26 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--Exported on 2026-09-10 18:38:18 from Blender-->
+<?xml version='1.0' encoding='utf-8'?>
 <components>
     <component name="engine_and_xl_hidden_01_mk1" class="engine">
-        <source geometry="extensions\andromeda_ascendant\assets\props\engines\engine_and_xl_hidden_01_mk1_data"/>
+        <source geometry="extensions\andromeda_ascendant\assets\props\engines\engine_and_xl_hidden_01_mk1_data" />
         <layers>
-            <layer/>
+            <layer />
         </layers>
         <connections>
-            <connection name="space" tags="engine"/>
-            <connection name="position" tags="position" value="1"/>
+            <connection name="space" tags="component engine extralarge andromeda" />
+            <connection name="position" tags="position" value="1" />
             <connection name="ConnectionForpart_main" tags="part ">
                 <parts>
                     <part name="part_main">
                         <lods>
                             <lod index="0">
                                 <materials>
-                                    <material id="1" ref="andromeda.andromeda_hull"/>
+                                    <material id="1" ref="andromeda.andromeda_hull" />
                                 </materials>
                             </lod>
                         </lods>
                         <size>
-                            <max x="0.02" y="0" z="0.02"/>
-                            <center x="0" y="0" z="0"/>
+                            <max x="0.02" y="0" z="0.02" />
+                            <center x="0" y="0" z="0" />
                         </size>
                     </part>
                 </parts>

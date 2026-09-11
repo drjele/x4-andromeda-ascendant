@@ -1,22 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <diff>
     <add sel="/materiallibrary">
         <collection name="andromeda">
             <material name="andromeda_hull" shader="p1_complex_surface" blendmode="TWOSIDED" preview="none">
                 <properties>
-                    <property type="BitMap"
-                              name="diffuse_map"
-                              value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_hull_diff"
-                    />
-                    <property type="BitMap"
-                              name="normal_map"
-                              value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_hull_normal"
-                    />
-                    <property type="Float" name="diffuseStr" value="1.0"/>
-                    <property type="Float" name="normalStr" value="1.0"/>
-                    <property type="Float" name="environmentStr" value="0.6"/>
-                    <property type="Float" name="Smoothness" value="0.45"/>
-                    <property type="Float" name="Metallness" value="0.35"/>
+                    <property type="BitMap" name="diffuse_map" value="assets\textures\generic\gen_p2_hulltexture_02_diff" />
+                    <property type="BitMap" name="normal_map" value="assets\textures\generic\gen_p2_hulltexture_02_normal" />
+                    <property type="BitMap" name="smooth_map" value="assets\textures\generic\gen_p2_hulltexture_02_smooth" />
+                    <property type="BitMap" name="metal_map" value="assets\textures\generic\gen_p2_hulltexture_02_metal" />
+                    <property type="Float" name="normalStr" value="0.5" />
+                    <property type="Float" name="smoothness" value="0.3" />
+                    <property type="Float" name="metallness" value="0.25" />
+                    <property type="Float" name="environmentStr" value="0.35" />
                 </properties>
             </material>
         </collection>

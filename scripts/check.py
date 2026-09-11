@@ -74,6 +74,8 @@ def main():
     if 0 < len(shell_file):
         valid = run_command(["shfmt", "-w" if True == option.fix else "-d", *shell_file]) and valid
         valid = run_command(["shellcheck", "--external-sources", *shell_file]) and valid
+    valid = run_command([sys.executable, "scripts/validate_extension.py"]) and valid
+    valid = run_command([sys.executable, "-m", "unittest", "discover", "-s", "tests"]) and valid
     return 0 if True == valid else 1
 
 

@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -143,7 +144,32 @@ def write_material_library(path, material, stem):
     path.write_text("\n".join(line) + "\n", encoding="utf-8")
 
 
+def validate_geometry(position, normal, texture_coordinate, triangle, material_count):
+    if not position or not triangle or material_count < 1:
+        raise ValueError("mesh must contain vertices, triangles and materials")
+    if len(position) != len(normal) or len(position) != len(texture_coordinate):
+        raise ValueError("vertex, normal and UV counts differ")
+    for values, width in ((position, 3), (normal, 3), (texture_coordinate, 2)):
+        if any(len(v) != width or not all(math.isfinite(x) for x in v) for v in values):
+            raise ValueError("invalid vertex, normal or UV coordinates")
+    for index, (first, second, third, material) in enumerate(triangle):
+        if any(v < 0 or v >= len(position) for v in (first, second, third)):
+            raise ValueError(f"triangle {index}: vertex index out of range")
+        if material < 0 or material >= material_count:
+            raise ValueError(f"triangle {index}: material index out of range")
+        a, b, c = (position[v] for v in (first, second, third))
+        u = [b[i] - a[i] for i in range(3)]
+        v = [c[i] - a[i] for i in range(3)]
+        cross = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+        if sum(x * x for x in cross) <= 1e-20:
+            raise ValueError(f"triangle {index}: degenerate face")
+        average = [sum(normal[j][i] for j in (first, second, third)) for i in range(3)]
+        if sum(cross[i] * average[i] for i in range(3)) <= 0:
+            raise ValueError(f"triangle {index}: winding disagrees with vertex normals")
+
+
 def write_object(path, stem, position, normal, texture_coordinate, triangle, material_count):
+    validate_geometry(position, normal, texture_coordinate, triangle, material_count)
     line = [f"# converted from {stem}.mesh", f"mtllib {stem}.mtl", f"o {stem}"]
     for value in position:
         line.append(f"v {value[0]:.6f} {value[1]:.6f} {value[2]:.6f}")
@@ -158,10 +184,25 @@ def write_object(path, stem, position, normal, texture_coordinate, triangle, mat
         line.append(f"usemtl {stem}_{material_index}")
         for first, second, third in ((entry[0], entry[1], entry[2]) for entry in face):
             corner = " ".join(
-                f"{value + 1}/{value + 1}/{value + 1}" for value in (first, third, second)
+                f"{value + 1}/{value + 1}/{value + 1}" for value in (first, second, third)
             )
             line.append(f"f {corner}")
     path.write_text("\n".join(line) + "\n", encoding="utf-8")
+
+
+def to_target_orientation(rows):
+    if not rows:
+        return []
+    if len(rows) != 3 or any(len(row) != 3 for row in rows):
+        raise ValueError("hardpoint orientation must be a 3 by 3 matrix")
+    basis = ((-1, 0, 0), (0, 0, SOURCE_FORWARD_SIGN), (0, 1, 0))
+    return [
+        [
+            sum(basis[i][k] * rows[k][m] * basis[j][m] for k in range(3) for m in range(3))
+            for j in range(3)
+        ]
+        for i in range(3)
+    ]
 
 
 def write_points(path, point):
@@ -169,7 +210,7 @@ def write_points(path, point):
         {
             "name": entry["name"],
             "position": list(to_target_axes(entry["position"])),
-            "orientation": [list(to_target_axes(row)) for row in entry["orientation"]],
+            "orientation": to_target_orientation(entry["orientation"]),
         }
         for entry in point
     ]
@@ -185,6 +226,7 @@ def convert(source, destination):
     position = [to_target_axes(value) for value in raw_position]
     normal = [to_target_axes(value) for value in raw_normal]
     stem = source.stem
+    validate_geometry(position, normal, texture_coordinate, triangle, len(material))
     destination.mkdir(parents=True, exist_ok=True)
     write_material_library(destination / f"{stem}.mtl", material, stem)
     write_object(

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<components>
+    <component name="weapon_and_xl_lance_01_mk1" class="weapon">
+        <connections>
+            <connection name="Con_laser01" tags="laser"/>
+            <connection name="con_weapon_01" tags="combat component extralarge andromeda weapon"/>
+        </connections>
+        <properties>
+            <reload/>
+        </properties>
+    </component>
+</components>

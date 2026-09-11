@@ -1,41 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+case "$#:${1:-}" in
+    0: | 1:--uninstall) ;;
+    *)
+        echo "usage: ./install.sh [--uninstall]" >&2
+        exit 2
+        ;;
+esac
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_ROOT/lib/find_x4.sh"
+source "$REPO_ROOT/lib/extension.sh"
 
 GAME_PATH="$(find_x4)" || {
     echo "could not find an X4: Foundations installation - set X4_PATH to point at it" >&2
     exit 1
 }
-
-[[ -d "$GAME_PATH/extensions" ]] || {
-    echo "no extensions directory at $GAME_PATH/extensions" >&2
-    exit 1
-}
-
-EXTENSION_ID="$(extension_id "$REPO_ROOT/extension/content.xml")"
-if [[ -z "$EXTENSION_ID" ]]; then
-    echo "could not read the extension id out of extension/content.xml" >&2
-    exit 1
-fi
-
-TARGET="$GAME_PATH/extensions/$EXTENSION_ID"
+prepare_extension_target
+begin_extension_transaction
 
 if [[ "--uninstall" == "${1:-}" ]]; then
-    rm -rf -- "$TARGET"
+    if [[ -d "$TARGET" ]]; then
+        mv -- "$TARGET" "$TRANSACTION/previous"
+    fi
+    TRANSACTION_COMMIT=true
     echo "removed $TARGET"
-    echo "restart X4 for the change to take effect"
-    exit 0
-fi
-
-rm -rf -- "$TARGET"
-mkdir -p -- "$TARGET"
-if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "$REPO_ROOT/extension/" "$TARGET/"
 else
-    cp -r -- "$REPO_ROOT/extension/." "$TARGET/"
+    stage_extension
+    TRANSACTION_COMMIT=true
+    echo "installed $TARGET"
 fi
-
-echo "installed $TARGET"
 echo "restart X4 for the change to take effect"

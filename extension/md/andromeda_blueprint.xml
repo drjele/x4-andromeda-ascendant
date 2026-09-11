@@ -5,9 +5,21 @@
 >
     <cues>
         <cue name="GrantBlueprint">
+            <actions/>
+        </cue>
+        <cue name="RecoverBlueprints" instantiate="true">
+            <conditions>
+                <event_cue_signalled cue="md.Setup.Start"/>
+            </conditions>
+            <delay exact="1s"/>
             <actions>
-                <debug_text text="'ANDROMEDA: granting blueprints'" filter="general"/>
-                <add_blueprints wares="[ware.ship_and_xl_cruiser_01_a, ware.engine_and_xl_hidden_01_mk1, ware.weapon_and_xl_lance_01_mk1]"/>
+                <do_all exact="3" counter="$Index">
+                    <set_value name="$Ware" exact="[ware.ship_and_xl_cruiser_01_a, ware.engine_and_xl_hidden_01_mk1, ware.weapon_and_xl_lance_01_mk1].{$Index}"/>
+                    <do_if value="not player.blueprints.{$Ware}.any.exists">
+                        <add_blueprints wares="$Ware"/>
+                        <debug_text text="'ANDROMEDA: added blueprint %1'.[$Ware]" filter="general"/>
+                    </do_if>
+                </do_all>
             </actions>
         </cue>
     </cues>

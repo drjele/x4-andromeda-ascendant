@@ -44,7 +44,3 @@ find_x4() {
     done < <(steam_libraries)
     return 1
 }
-
-extension_id() {
-    sed -n 's/.*<content[^>]*id="\([^"]*\)".*/\1/p' "$1" | head -1
-}

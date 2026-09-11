@@ -6,8 +6,11 @@
 
 A fan mod that brings the Systems Commonwealth heavy cruiser **Andromeda Ascendant** into X4: Foundations 9.0 as a flyable XL ship.
 
-**Status: it builds, it flies, and it looks wrong.** A modelled hull goes through the whole Egosoft toolchain to X4's own `.xmf`, the ship can be built at a player shipyard and flown, and its thirty-six turrets work. What it does not do is render correctly: the hull comes out red and partly see-through for reasons nobody has tracked down yet. See [Open](#open) for that and the rest, and
-[The asset pipeline](#the-asset-pipeline) for how the conversion actually works — it is written down in full so nobody has to rediscover it.
+**Status: buildable and flyable; rendering and equipment fixes await an in-game confirmation.**
+The hull passes the Egosoft conversion pipeline, with six large and thirty medium turrets.
+The current repair corrects reversed geometry, LOD shading, surface placement and equipment groups,
+and recovers missing blueprints on existing saves. Existing ship and equipment identifiers are retained.
+See [Open](#open) for the remaining visual and gameplay checks.
 
 The procedural generator [`andromeda_gen.py`](andromeda_gen.py) is kept as a blocking tool and for the axis conventions, but it no longer produces the shipped hull.
 
@@ -17,7 +20,7 @@ The procedural generator [`andromeda_gen.py`](andromeda_gen.py) is kept as a blo
 |-----------------|---------------------------------------------------------------------------------------------------|
 | Blender         | **4.2** — the Egosoft export tooling does not support newer versions, so do not "upgrade" to 4.3+ |
 | X4: Foundations | 9.0 — no DLC required                                                                             |
-| Python          | none separately — the script runs inside Blender's bundled interpreter                            |
+| Python          | Python 3.10+ for conversion, install/publish helpers and checks; Blender scripts use its bundled interpreter |
 
 ## Install
 
@@ -90,28 +93,27 @@ python3 soase_import.py "<archive>/Mesh/XMC.mesh" -o ~/x4mod/source
 
 [`soase_import.py`](soase_import.py) parses Ironclad's text mesh format — an indentation-nested key-value tree — and writes `XMC.obj`, `XMC.mtl` and `XMC_points.json`. It refuses binary meshes; convert those with ConvertX first.
 
-Sins uses `X` right, `Y` up, `Z` forward. The converter maps `(x, y, z)` to `(-x, z, y)`: swapping the two axes alone would mirror the model, so negating `X` restores the handedness. Triangle winding is reversed to match and `V` is flipped out of the DirectX convention.
+Sins uses `X` right, `Y` up, `Z` forward. The converter maps `(x, y, z)` to `(-x, z, y)`: swapping the two axes alone would mirror the model, so negating `X` restores the handedness. This transform preserves handedness, so triangle winding is preserved too. `V` is flipped out of the DirectX convention. The converter rejects inconsistent winding, invalid indices and degenerate faces before writing output.
 
 ### 3. Blender scene
 
 ```bash
-blender --background --python andromeda_import.py -- "<path>/p1[assets]/andromeda/ship_and_xl_cruiser_01.blend"
+blender --background --python-exit-code 1 --python andromeda_import.py -- "<path>/p1[assets]/andromeda/ship_and_xl_cruiser_01.blend" --source ~/x4mod/source --export
 ```
 
 [`andromeda_import.py`](andromeda_import.py) builds the scene X4 expects: `part_main` plus
-`part_main.LOD1` through `.LOD3` and a `part_main.wreck`, the UV channel renamed `uv1`, a `col` vertex colour attribute, and the connection empties. It scales the hull to `SHIP_LENGTH`, centres the origin and samples the hull surface to place turrets rather than trusting the source hardpoints.
+`part_main.LOD1` through `.LOD3` and a `part_main.wreck`, the UV channel renamed `uv1`, a `col` vertex colour attribute, and the connection empties. It scales the hull to `SHIP_LENGTH`, centres the origin and intersects the hull triangles to place turrets and shields. Stable mount names preserve existing ships. Legacy OBJ winding is repaired against its supplied normals before creating the LODs. If a mount falls outside the surface, the importer searches within 3.5% of ship length for the nearest face facing the correct hemisphere; otherwise the build fails instead of dropping the slot.
 
 Three things about connections are easy to get wrong and cost real time:
 
 - **Names do not matter, tags do.** X4 reads the tags; the names are free. A turret is
-  `turret medium standard missile hittable combat`, an engine `engine extralarge standard`, a shield
+  `turret medium standard missile hittable combat`, an Andromeda engine `engine extralarge andromeda`, a shield
   `extralarge shield standard`. The role word alone is not enough — without a size the game offers no slot at all.
-- **Orientation is the mounting normal.** A connection's local `+Y` points away from the hull, so a ventral mount carries a 180 degree flip. Without it every turret faces the same way.
-- **Every connection needs a group.** Vanilla groups all of them, named by station:
-  `group_front_up_left`, `group_back_down_mid` and so on. The equipment browser lists nothing for a connection with no group, even though a loadout preset can still fill it.
+- **Orientation is the mounting normal.** In exported X4 coordinates a connection's local `+Y` points away from the hull. In the Blender scene this is local `+Z`; mount rotations align that axis with the sampled surface normal.
+- **Turrets, engines and local shields need groups.** Vanilla groups all of them, named by station:
+  `group_front_up_left`, `group_back_down_mid` and so on. Engine groups must be separate from turret groups, and turret/engine groups have local shields. Main weapons must stay ungrouped for the standard equipment menu; both use the same empty group. Their mounts are selectable, not tagged `mandatory`. Fourteen medium shield slots protect these groups in addition to the four existing XL shield slots.
 
-The Blender addon registers its tag and group properties as real object properties, which do not exist under `--factory-startup`. The build script writes an `extratags` string property and a `group_name`
-custom property instead, and the export step copies `group_name` onto the addon's `groups` property before exporting.
+The build script retains loaded addons when clearing the scene. It writes `extratags` and `group_name`, and copies the latter onto the addon's registered `groups` property before export. Use `--export` with the Egosoft addons enabled. The script exits with an error if either the DAE or component XML is missing.
 
 ### 4. Export and convert
 
@@ -136,7 +138,7 @@ Then run `XUConverter.exe "Z:\x4mod\p1[assets]" "Z:\x4mod\p1data"` inside the co
 ### Textures
 
 X4 reads **DXT5 with a full mipmap chain**, gzipped, referenced from the material library without an extension. Uncompressed dds is silently ignored. The material itself goes in a diff against
-`/materiallibrary`, using the `p1_complex_surface` shader — lowercase, no `.fx` suffix, whatever the community guide says. Thin surfaces need `blendmode="TWOSIDED"` or you see straight through them.
+`/materiallibrary`, using the `p1_complex_surface` shader — lowercase, no `.fx` suffix, whatever the community guide says. The current hull retains `blendmode="TWOSIDED"` for thin source surfaces. It now references the base-game `gen_p2_hulltexture_02` diffuse, normal, smoothness and metal maps also used by Hyperion. Hull UVs use a 120 m box projection, with dark grey vertex colour and a zero paint mask. This adapts the panel texture to Andromeda; it does not copy Hyperion's mesh or UV layout and adds no DLC requirement. The old source DDS files remain diagnostic assets.
 
 ## Running the generator
 
@@ -241,7 +243,7 @@ These names come from the generator and predate the real pipeline. X4 does not c
 
 ## Help wanted
 
-Issues and pull requests are welcome. The two open items worth the most are the red hull and the mission director cue, both described under [Open](#open) — they are the difference between a ship that looks and equips correctly and one that does not.
+Issues and pull requests are welcome. In-game confirmation of rendering, existing-save blueprint recovery and equipment configuration is especially useful. See [Open](#open).
 
 If you know the X4 asset pipeline, the section on it above is written down precisely so nobody has to rediscover it: the tag and group rules, the orientation convention, the texture format, and why the converter needs Wine rather than Proton. Corrections to any of that are as useful as code.
 
@@ -260,7 +262,7 @@ If you know the X4 asset pipeline, the section on it above is written down preci
 | [`extension/t/`](extension/t)                                       | Localised text files                                                                              |
 | [`extension/md/`](extension/md)                                     | Mission director scripts                                                                          |
 
-The `extension/` directories are empty placeholders for now, tracked with `.gitkeep` so the layout is visible.
+The `extension/` directory contains the shipped XML, meshes, physics and textures; `.gitkeep` files are remnants of the initial scaffold.
 
 ## Status
 
@@ -270,19 +272,19 @@ The `extension/` directories are empty placeholders for now, tracked with `.gitk
 - Axis, winding and texture-coordinate conversion into the X4 convention
 - The whole Egosoft toolchain driven headless, from Blender scene to `.xmf`
 - lod0-3, collision, wreck and Jolt physics meshes, converting with no errors
-- Component XML with fifty-one tagged and grouped connections, generated rather than hand-written
-- Six large and thirty medium turrets placed by sampling the hull surface, each oriented outward
+- Component XML generated from stable mount definitions, with protected equipment groups
+- Six large and thirty medium turrets placed on hull triangles and aligned to their surface normals
 - Ship macro, ware, localised text and index entries; the ship builds and flies
 - Engines sunk into the hull so no engine model shows, only the exhaust
 
 ### Open
 
-These are the things a contributor could pick up. The first two are the ones that matter.
+- **Visual confirmation is pending.** Earlier builds rendered red and partly see-through. All 11,912 LOD0 triangles opposed their supplied normals; the importer now repairs this, fixes LOD shading and uses darker panel textures shared with Hyperion, with no paint mask. Rebuilt XMF assets pass conversion, but the equipment preview and exterior still need comparison in X4.
+- **Existing-save recovery needs an in-game check.** The old `GrantBlueprint` cue was already complete in an inspected save, which contained only the ship blueprint. `RecoverBlueprints` listens to `md.Setup.Start` on new games and loads, adding only missing ship, engine and weapon blueprints. The old cue name is retained for compatibility.
+- **Equipment groups have been repaired.** Engines now use separate groups, main weapons are ungrouped and selectable, and fourteen new medium shield slots protect turret/engine groups. Existing connections keep their names. Engine and weapon tags now require the registered `Andromeda` compatibility type, so only the custom Slipstream Drive and Ravager-derived Point Singularity Projector can be newly equipped. Newly added shield slots start unequipped on existing ships; equip them at a player shipyard.
 
-- **The hull renders red, and partly see-through.** Not a missing material — a missing material gives magenta, and that was fixed long ago. The material resolves, the textures are valid DXT5 with mipmaps and load in other tools, `blendmode` is `TWOSIDED`, and the `col` vertex colour attribute is filled with neutral grey. Something else in `p1_complex_surface` is driving the colour and the transparency. Comparing against a vanilla ship material property by property is the obvious next step, and nobody has done it yet.
-- **The mission director cue never fires.** `md/andromeda_blueprint.xml` holds a root cue with no conditions, which should run when the script is instantiated. A `debug_text` inside it never reaches the log on an existing save, so the blueprints are never granted — which is why the custom engine and main gun never appear for sale however correct their wares and index entries are. Either the cue needs a condition or a delay, or new MD scripts are only instantiated on a new game.
 - **Turrets and shields sit on the hull rather than in it.** They are sunk a few metres, but the hull has no recesses for them because none were modelled. This one needs a modeller, not a script.
-- **The hull has no detail texture.** The normal map from the source set is good and is used. The diffuse is nearly black where this hull's UVs land, and what looks like a self-illumination map is a team colour mask, so both were dropped in favour of flat grey. A proper hull texture is artist work.
+- **The hull texture is adapted, not authored for this ship.** Hyperion's shared base-game panel maps now use a box projection on Andromeda. A dedicated UV layout, seam cleanup and bespoke livery remain artist work.
 - **Borrowed sub-macros.** The bridge and cargo bay bind Argon macros, so the interior is Argon.
 - **Balance is unvalidated.** 2700 m, 392k hull, thirty-six turrets. Nobody has fought with it.
 
@@ -304,7 +306,7 @@ stays unchanged. After publishing, open the printed Workshop URL, complete any r
 Update the manifest version and release date together with `CHANGELOG.md`
 when releasing. See [Development](DEVELOPMENT.md) for staging, platform and release conventions.
 
-Andromeda has no playable asset yet; publish only when the extension is ready.
+Complete the in-game acceptance checks before publishing a release.
 
 ## Development
 
@@ -317,3 +319,7 @@ The code in this repository is MIT licensed — see [`LICENSE`](LICENSE).
 The hull mesh was modelled by **[grannyte](https://www.reddit.com/user/grannyte/)** and is used with their permission. It is not covered by the MIT licence above — see [Mesh source](#mesh-source).
 
 This is a **non-commercial fan project**. Andromeda, the Andromeda Ascendant and all related names and designs belong to the rights holders of the series. X4: Foundations and its file formats belong to Egosoft GmbH. This project is not affiliated with, sponsored by or endorsed by either, and is not for sale.
+
+### Equipment update on existing ships
+
+After installing the equipment fix, restart X4 and start a fresh ship configuration. Main weapons should appear in the left-hand weapon category as Point Singularity Projectors, and engine choices should contain only Slipstream Drives. Old ships and saved loadouts may still retain their previously fitted ATF weapons or faction engines; replace those at a player shipyard rather than expecting the mod to rewrite a save. Shield length axes are aligned to the ship's forward direction projected onto the hull, including ventral mounts.
