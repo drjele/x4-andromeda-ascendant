@@ -52,7 +52,7 @@ Restart X4 after installing. The ship is **player-only**: the ware names the pla
 
 ## Mesh source
 
-The hull was modelled by **[grannyte](https://www.reddit.com/user/grannyte/)** and is used here **with their permission**. The credit stays in this file, in the extension manifest and in the Workshop description. The copy this project works from was distributed inside the Andromeda mod for Sins of a Solar Empire on [ModDB](https://www.moddb.com/mods/andromedamod).
+The hull was modelled by **[grannyte](https://www.reddit.com/user/grannyte/)** ([GitHub](https://github.com/grannyte)) and is used here **with their permission**. The credit stays in this file, in [`AUTHORS.md`](AUTHORS.md), in the extension manifest and in the Workshop description. The copy this project works from was distributed inside the Andromeda mod for Sins of a Solar Empire on [ModDB](https://www.moddb.com/mods/andromedamod).
 
 The archive ships `Mesh/XMC.mesh` — the XMC Glorious Heritage class heavy cruiser — in Ironclad's **text** mesh format, so no binary conversion is needed:
 
