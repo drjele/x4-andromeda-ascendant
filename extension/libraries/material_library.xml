@@ -4,14 +4,18 @@
         <collection name="andromeda">
             <material name="andromeda_hull" shader="p1_complex_surface" blendmode="TWOSIDED" preview="none">
                 <properties>
-                    <property type="BitMap" name="diffuse_map" value="assets\textures\generic\gen_p2_hulltexture_02_diff" />
-                    <property type="BitMap" name="normal_map" value="assets\textures\generic\gen_p2_hulltexture_02_normal" />
-                    <property type="BitMap" name="smooth_map" value="assets\textures\generic\gen_p2_hulltexture_02_smooth" />
-                    <property type="BitMap" name="metal_map" value="assets\textures\generic\gen_p2_hulltexture_02_metal" />
-                    <property type="Float" name="normalStr" value="0.5" />
-                    <property type="Float" name="smoothness" value="0.3" />
-                    <property type="Float" name="metallness" value="0.25" />
-                    <property type="Float" name="environmentStr" value="0.35" />
+                    <property type="BitMap" name="diffuse_map" value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_panels_diff" />
+                    <property type="BitMap" name="normal_map" value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_panels_normal" />
+                    <property type="BitMap" name="smooth_map" value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_panels_smooth" />
+                    <property type="BitMap" name="metal_map" value="extensions\andromeda_ascendant\assets\textures\andromeda\andromeda_panels_metal" />
+                    <property type="BitMap" name="normal_detail_map" value="assets\textures\generic\gen_p2_detail_01_normal" />
+                    <property type="Float" name="normal_detail_tiling" value="10.0" />
+                    <property type="Float" name="normal_detail_tiling_v" value="10.0" />
+                    <property type="Float" name="normal_detailStr" value="0.1" />
+                    <property type="Float" name="normalStr" value="1.0" />
+                    <property type="Float" name="Smoothness" value="1.0" />
+                    <property type="Float" name="Metallness" value="1.0" />
+                    <property type="Float" name="environmentStr" value="0.6" />
                 </properties>
             </material>
         </collection>

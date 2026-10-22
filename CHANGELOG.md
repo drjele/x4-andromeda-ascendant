@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Own tileable silver hull panel textures (Codex-generated panel art in `art/`) with baked ambient-occlusion shading and darker mount pads, replacing the base-game trim sheet. Untested in-game.
 - Exact left/right hull symmetry, including every LOD, mounts and integrated turrets.
 - 118 standard turrets (15 L, 103 M) and 133 M shields in 20 zone groups, placed symmetrically on flat hull, one M shield per M turret and two per L turret. Untested in-game.
 - Rounded-square pads under all 54 standard turret and shield mounts, sized from vanilla sockets, filleted into the hull and mirror-symmetric. Converted with zero errors; untested in-game.

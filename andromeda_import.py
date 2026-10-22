@@ -28,8 +28,13 @@ DORSAL_FACING = (0.0, 0.0, 0.0)
 HULL_CORE_FRACTION = 0.12
 MAIN_WEAPON_TAGS = "combat extralarge andromeda weapon"
 ENGINE_TAGS = "engine extralarge andromeda"
-HULL_VERTEX_COLOUR = (0.18, 0.20, 0.22, 1.0)
+HULL_BASE_COLOUR = (0.60, 0.62, 0.66)
 HULL_TEXTURE_METRES = 120.0
+PAD_TINT = 0.6
+UNDERSIDE_SHADE = 0.12
+OCCLUSION_STRENGTH = 0.5
+OCCLUSION_RAYS = 16
+OCCLUSION_REACH = 150.0
 FORWARD_FACING = (0.0, 0.0, 0.0)
 ENGINE_SINK = 0.02
 PAD_LIFT = 0.2
@@ -1991,6 +1996,36 @@ def repair_winding(mesh_object):
     mesh.update()
 
 
+def hull_shades(mesh):
+    # Vertex shading for the panel texture: open sky above a vertex keeps it bright, nearby hull
+    # darkens it, and downward faces are a little darker than the deck.
+    tree = BVHTree.FromPolygons(
+        [v.co for v in mesh.vertices], [list(p.vertices) for p in mesh.polygons]
+    )
+    golden = math.pi * (3.0 - math.sqrt(5.0))
+    rays = []
+    for i in range(OCCLUSION_RAYS):
+        up = 1.0 - (i + 0.5) / OCCLUSION_RAYS
+        radius = math.sqrt(1.0 - up * up)
+        rays.append(Vector((radius * math.cos(golden * i), radius * math.sin(golden * i), up)))
+    shades = []
+    for vertex in mesh.vertices:
+        normal = vertex.normal
+        if normal.length < 1e-6:
+            shades.append(1.0)
+            continue
+        rotation = normal.to_track_quat("Z", "Y")
+        blocked = sum(
+            1
+            for ray in rays
+            if tree.ray_cast(vertex.co + normal * 0.5, rotation @ ray, OCCLUSION_REACH)[0]
+            is not None
+        )
+        shade = 1.0 - OCCLUSION_STRENGTH * blocked / OCCLUSION_RAYS
+        shades.append(shade * (1.0 - UNDERSIDE_SHADE * max(0.0, -normal.z)))
+    return shades
+
+
 def prepare_channels(mesh_object):
     mesh = mesh_object.data
     for layer in list(mesh.uv_layers):
@@ -2002,16 +2037,28 @@ def prepare_channels(mesh_object):
         for index in polygon.loop_indices:
             position = mesh.vertices[mesh.loops[index].vertex_index].co
             uv.data[index].uv = tuple(position[axis] / HULL_TEXTURE_METRES for axis in axes)
+    shades = hull_shades(mesh)
+    marker = mesh.attributes.get("pad")
+    pads = [entry.value for entry in marker.data] if None is not marker else None
+    if None is not marker:
+        mesh.attributes.remove(marker)
     for existing in list(mesh.color_attributes):
         mesh.color_attributes.remove(existing)
     for name, value in (
-        ("col", HULL_VERTEX_COLOUR),
+        ("col", None),
         ("idcode", (0.5, 0.5, 0.5, 1.0)),
         ("paintmodmask", (0.0, 0.0, 0.0, 1.0)),
     ):
         colour = mesh.color_attributes.new(name=name, type="BYTE_COLOR", domain="CORNER")
-        for entry in colour.data:
-            entry.color = value
+        if None is not value:
+            for entry in colour.data:
+                entry.color = value
+            continue
+        for polygon in mesh.polygons:
+            tint = PAD_TINT if pads is not None and pads[polygon.index] else 1.0
+            for index in polygon.loop_indices:
+                shade = shades[mesh.loops[index].vertex_index] * tint
+                colour.data[index].color = (*(c * shade for c in HULL_BASE_COLOUR), 1.0)
     mesh_object.data.materials.clear()
     mesh_object.data.materials.append(
         (bpy.data.materials.get(MATERIAL_NAME) or bpy.data.materials.new(MATERIAL_NAME))
@@ -2284,12 +2331,17 @@ def add_pad(bm, surface, point, frame, half_extents, top=None, flat=None):
             level = min(top + (level - PAD_EMBED * t - top) * blend, top)
             ring.append(bm.verts.new(point + offset * scale + normal * level))
         rings.append(ring)
+    marker = bm.faces.layers.int.get("pad")
+    created = []
     for i in range(segments):
         j = (i + 1) % segments
-        bm.faces.new((centre, rings[0][i], rings[0][j]))
+        created.append(bm.faces.new((centre, rings[0][i], rings[0][j])))
         for high, low in zip(rings, rings[1:]):
-            bm.faces.new((high[i], low[i], low[j]))
-            bm.faces.new((high[i], low[j], high[j]))
+            created.append(bm.faces.new((high[i], low[i], low[j])))
+            created.append(bm.faces.new((high[i], low[j], high[j])))
+    if None is not marker:
+        for face in created:
+            face[marker] = 1
     return top, False
 
 
@@ -2337,6 +2389,7 @@ def mount_frames(surface):
 def add_pads(mesh_object, surface, frames):
     bm = bmesh.new()
     bm.from_mesh(mesh_object.data)
+    bm.faces.layers.int.new("pad")
     partners = mirror_partners()
     seats = {}
     placed = {}

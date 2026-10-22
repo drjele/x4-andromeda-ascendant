@@ -30,3 +30,4 @@ venv/
 *.tga
 *.obj
 *.mtl
+.temp/

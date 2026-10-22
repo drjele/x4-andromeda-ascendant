@@ -46,7 +46,7 @@ assert all(p.normal.dot(normal) < 0 for p in mesh.polygons)
 IMPORTER["prepare_channels"](obj)
 assert set(mesh.color_attributes.keys()) == {"col", "idcode", "paintmodmask"}
 assert all(entry.color[0] == 0 for entry in mesh.color_attributes["paintmodmask"].data)
-assert all(0.1 < entry.color[0] < 0.3 for entry in mesh.color_attributes["col"].data)
+assert all(0.1 < entry.color[0] < 0.8 for entry in mesh.color_attributes["col"].data)
 assert mesh.uv_layers.active.name == "uv1"
 assert len(IMPORTER["MOUNTS"]) == 305
 assert len({mount[0] for mount in IMPORTER["MOUNTS"]}) == 305

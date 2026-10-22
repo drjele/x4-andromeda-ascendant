@@ -147,7 +147,7 @@ Then run `XUConverter.exe "Z:\x4mod\p1[assets]" "Z:\x4mod\p1data"` inside the co
 ### Textures
 
 This pipeline uses **DXT5 with a full mipmap chain**, gzipped, referenced from the material library without a file extension. The earlier uncompressed DDS setup did not render correctly; this is not a claim about every texture format supported by X4. The material itself goes in a diff against
-`/materiallibrary`, using the `p1_complex_surface` shader — lowercase, no `.fx` suffix, whatever the community guide says. The current hull retains `blendmode="TWOSIDED"` for thin source surfaces. It now references the base-game `gen_p2_hulltexture_02` diffuse, normal, smoothness and metal maps also used by Hyperion. Hull UVs use a 120 m box projection, with dark grey vertex colour and a zero paint mask. This adapts the panel texture to Andromeda; it does not copy Hyperion's mesh or UV layout and adds no DLC requirement. The old source DDS files remain diagnostic assets.
+`/materiallibrary`, using the `p1_complex_surface` shader — lowercase, no `.fx` suffix, whatever the community guide says. The current hull retains `blendmode="TWOSIDED"` for thin source surfaces. It references the mod's own tileable panel maps (`andromeda_panels_diff`, `_normal`, `_smooth`, `_metal`), built by `scripts/make_hull_textures.py` from the tileable panel art in `art/`, plus the base-game `gen_p2_detail_01_normal` as a fine detail normal. Hull UVs use a 120 m box projection. The near-white panel albedo is tinted by vertex colour: cool silver, darkened by baked ambient occlusion and slightly on downward faces, with mount pads in darker gunmetal. The paint mask stays zero. The old source DDS files remain diagnostic assets.
 
 ## Running the generator
 
@@ -297,7 +297,7 @@ The `extension/` directory contains the shipped XML, meshes, physics and texture
 
 - **Custom turrets: failed in-game acceptance.** Four dedicated slots and the experimental component remain in this snapshot for diagnosis. They are not a completed feature. Do not infer working turrets from shop entries, nominal DPS, a successful export or the offline tests.
 - **Rounded hull, flat equipment bases.** Sampling surface normals and sinking mounts slightly does not make their bases conform to the hull. Authored sockets, recesses or fitted adapters are needed for standard turrets and shields.
-- **Repetitive textures.** The shared Hyperion panel maps use a 120 m box projection. A dedicated UV layout, seam cleanup, suitable scale and authored materials/livery remain unfinished.
+- **Textures.** Own silver panel maps now replace the shared Hyperion trim sheet, but still through a 120 m box projection, which shows seams where the projection axis changes. Lights (red strips, engine glow) and a livery are not done, and the look is untested in-game.
 - **Equipment and save behavior.** Main weapons appearing in the menu does not establish correct combat behavior. Firing, tracking, destruction/repair, existing-ship refits and save/reload still need acceptance checks. Old fitted equipment is not automatically replaced.
 - **Borrowed interior and unfinished docking.** Bridge/storage macros are Argon. Docking connection placeholders do not provide usable dock facilities; the preview showed zero S and M docks.
 - **Balance is unvalidated.** The ship is 2700 m long with 392k nominal hull and forty turret slots, including the four experimental ones. Effective combat performance is not established.
