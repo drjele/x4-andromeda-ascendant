@@ -40,7 +40,8 @@ PAD_SQUARENESS = 5.0
 PAD_FLARE = 1.5
 PAD_FILLET_RINGS = 5
 PAD_SMALL_FILLET_RINGS = 3
-PAD_EMBED = 0.3
+PAD_EMBED = 0.6
+PAD_YAW_STEP = 7.5
 # Half-extents across and along each mount: the vanilla socket footprint plus a rim.
 PAD_HALF_EXTENTS = {
     "large turret": (36.0, 36.0),
@@ -2131,6 +2132,48 @@ def pad_outline(right, forward, half_extents, segments):
     return outline
 
 
+def smooth_ring(values, half_width):
+    count = len(values)
+    return [
+        sum(values[(i + k) % count] for k in range(-half_width, half_width + 1))
+        / (2 * half_width + 1)
+        for i in range(count)
+    ]
+
+
+def yawed(frame, degrees):
+    right, forward, normal = (frame.col[axis].normalized() for axis in range(3))
+    angle = math.radians(degrees)
+    turned = right * math.cos(angle) + forward * math.sin(angle)
+    return Matrix((turned, normal.cross(turned), normal)).transposed()
+
+
+def pad_roughness(surface, point, frame, half_extents):
+    right, forward, normal = (frame.col[axis].normalized() for axis in range(3))
+    reach = max(half_extents) * PAD_FLARE
+    heights = []
+    for offset in pad_outline(right, forward, half_extents, PAD_SMALL_SEGMENTS):
+        for scale in (0.5, 1.0, PAD_FLARE):
+            hit, _, _, _ = surface.tree.ray_cast(
+                point + offset * scale + normal * reach, -normal, 2 * reach
+            )
+            if hit is not None:
+                heights.append((hit - point).dot(normal))
+    return max(heights) - min(heights) if heights else 0.0
+
+
+def best_yaw(surface, point, frame, half_extents, centred):
+    # A square only stays mirror-symmetric on the centre plane when straight or diagonal.
+    angles = (0.0, 45.0) if centred else [i * PAD_YAW_STEP for i in range(int(90 / PAD_YAW_STEP))]
+    return min(
+        angles,
+        key=lambda angle: (
+            pad_roughness(surface, point, yawed(frame, angle), half_extents),
+            abs(angle),
+        ),
+    )
+
+
 def add_pad(bm, surface, point, frame, half_extents, top=None):
     right, forward, normal = (frame.col[axis].normalized() for axis in range(3))
     reach = max(half_extents) * PAD_FLARE
@@ -2150,17 +2193,28 @@ def add_pad(bm, surface, point, frame, half_extents, top=None):
         seat = inner[int(PAD_SEAT * (len(inner) - 1))] if inner else 0.0
         top = max(seat, 0.0) + PAD_LIFT
     fallback = (inner[0] if inner else 0.0) - PAD_SKIRT
+    # Shorten the flank where it would run past the hull edge, so every foot lands on hull.
+    reaches = []
+    for offset in outline:
+        flare = PAD_FLARE
+        while 1.0 < flare and height(offset * flare) is None:
+            flare -= 0.05
+        reaches.append(max(flare, 1.0))
     centre = bm.verts.new(point + normal * top)
     rings = []
     for step in range(rings_count + 1):
         t = step / rings_count
         blend = t * t * (3.0 - 2.0 * t)
-        scale = 1.0 + (PAD_FLARE - 1.0) * t
+        scales = [1.0 + (reach_i - 1.0) * t for reach_i in reaches]
+        raw = [height(offset * scale) for offset, scale in zip(outline, scales)]
+        known = [h for h in raw if h is not None]
+        raw = [(fallback if not known else min(known)) if h is None else h for h in raw]
+        ground = smooth_ring(raw, max(1, segments // 10))
+        if step == rings_count:
+            ground = [min(a, b) for a, b in zip(ground, raw)]
         ring = []
-        for offset in outline:
-            ground = height(offset * scale)
-            ground = fallback if ground is None else ground - PAD_EMBED * t
-            level = min(top + (ground - top) * blend, top)
+        for offset, scale, level in zip(outline, scales, ground):
+            level = min(top + (level - PAD_EMBED * t - top) * blend, top)
             ring.append(bm.verts.new(point + offset * scale + normal * level))
         rings.append(ring)
     for i in range(segments):
@@ -2218,11 +2272,21 @@ def add_pads(mesh_object, surface, frames):
     bm.from_mesh(mesh_object.data)
     partners = mirror_partners()
     tops = {}
+    yaws = {}
     placed = {}
     # Right-hand mounts first, so each mirrored pad reuses its partner's height.
     for name, tags, group, point, facing in sorted(frames, key=lambda entry: entry[0] in partners):
         normal = facing.to_matrix().col[2].normalized()
         frame = longitudinal_facing(normal).to_matrix()
+        if "turret" in tags.split():
+            partner = partners.get(name)
+            yaw = (
+                -yaws[partner]
+                if None is not partner
+                else best_yaw(surface, point, frame, pad_extents(tags), abs(point.x) < 1e-6)
+            )
+            yaws[name] = yaw
+            frame = yawed(frame, yaw)
         top = add_pad(bm, surface, point, frame, pad_extents(tags), tops.get(partners.get(name)))
         tops[name] = top
         placed[name] = (name, tags, group, point + normal * top, facing)

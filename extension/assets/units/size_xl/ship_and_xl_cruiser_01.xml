@@ -1008,7 +1008,7 @@
             </connection>
             <connection name="con_turret_007" group="group_front_up_left" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="-538.8421" y="-143.9274" z="1134.093" />
+                    <position x="-538.8234" y="-144.0302" z="1134.06" />
                     <quaternion qx="0.04494893" qy="-0.9517494" qz="-0.1701831" qw="-0.251377" />
                 </offset>
             </connection>
@@ -1020,7 +1020,7 @@
             </connection>
             <connection name="con_turret_009" group="group_front_up_right" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="538.8421" y="-143.9274" z="1134.093" />
+                    <position x="538.8234" y="-144.0302" z="1134.06" />
                     <quaternion qx="0.04494893" qy="0.9517494" qz="0.1701831" qw="-0.251377" />
                 </offset>
             </connection>
@@ -1086,7 +1086,7 @@
             </connection>
             <connection name="con_turret_020" group="group_mid_down_left" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="-703.9982" y="-289.8131" z="-324.0389" />
+                    <position x="-704.0052" y="-289.8038" z="-324.0367" />
                     <quaternion qx="0.761897" qy="0.1926207" qz="0.5601505" qw="-0.2619957" />
                 </offset>
             </connection>
@@ -1098,7 +1098,7 @@
             </connection>
             <connection name="con_turret_022" group="group_mid_down_right" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="703.9982" y="-289.8131" z="-324.0389" />
+                    <position x="704.0052" y="-289.8038" z="-324.0367" />
                     <quaternion qx="0.761897" qy="-0.1926207" qz="-0.5601505" qw="-0.2619957" />
                 </offset>
             </connection>
@@ -1128,7 +1128,7 @@
             </connection>
             <connection name="con_turret_027" group="group_back_up_left" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="-498.14" y="90.15576" z="-1242.426" />
+                    <position x="-498.8039" y="90.42627" z="-1242.719" />
                     <quaternion qx="0.4778359" qy="-0.4485474" qz="-0.3114944" qw="-0.6880766" />
                 </offset>
             </connection>
@@ -1140,7 +1140,7 @@
             </connection>
             <connection name="con_turret_029" group="group_back_up_right" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="498.14" y="90.15576" z="-1242.426" />
+                    <position x="498.8039" y="90.42627" z="-1242.719" />
                     <quaternion qx="0.4778359" qy="0.4485474" qz="0.3114944" qw="-0.6880766" />
                 </offset>
             </connection>
@@ -1206,13 +1206,13 @@
             </connection>
             <connection name="con_turret_040" group="group_nose_up_mid" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="31.92211" y="-181.2333" z="647.9989" />
+                    <position x="31.92269" y="-181.2349" z="647.9989" />
                     <quaternion qx="0.1299019" qy="-0.6903406" qz="-0.1280899" qw="-0.7001059" />
                 </offset>
             </connection>
             <connection name="con_turret_041" group="group_nose_up_mid" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="-31.92211" y="-181.2333" z="647.9989" />
+                    <position x="-31.92269" y="-181.2349" z="647.9989" />
                     <quaternion qx="0.1299019" qy="0.6903406" qz="0.1280899" qw="-0.7001059" />
                 </offset>
             </connection>
@@ -1326,13 +1326,13 @@
             </connection>
             <connection name="con_turret_060" group="group_aft_down_mid" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="192.0188" y="329.5959" z="-464.0007" />
+                    <position x="192.0188" y="329.5962" z="-464.0007" />
                     <quaternion qx="0.7192695" qy="0.03258837" qz="0.6931421" qw="-0.03381658" />
                 </offset>
             </connection>
             <connection name="con_turret_061" group="group_aft_down_mid" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="-192.0188" y="329.5959" z="-464.0007" />
+                    <position x="-192.0188" y="329.5962" z="-464.0007" />
                     <quaternion qx="0.7192695" qy="-0.03258837" qz="-0.6931421" qw="-0.03381658" />
                 </offset>
             </connection>
@@ -1416,13 +1416,13 @@
             </connection>
             <connection name="con_turret_075" group="group_arm_up_right" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="615.3445" y="-246.588" z="383.9952" />
+                    <position x="615.3952" y="-246.6207" z="383.9955" />
                     <quaternion qx="0.3396215" qy="-0.6185956" qz="-0.3371283" qw="-0.6231704" />
                 </offset>
             </connection>
             <connection name="con_turret_076" group="group_arm_up_left" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="-615.3445" y="-246.588" z="383.9952" />
+                    <position x="-615.3952" y="-246.6207" z="383.9955" />
                     <quaternion qx="0.3396215" qy="0.6185956" qz="0.3371283" qw="-0.6231704" />
                 </offset>
             </connection>
@@ -1572,25 +1572,25 @@
             </connection>
             <connection name="con_turret_101" group="group_arm_down_right" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="575.6363" y="-267.7617" z="151.9409" />
+                    <position x="575.6437" y="-267.7519" z="151.9421" />
                     <quaternion qx="0.7219908" qy="-0.2065169" qz="-0.6141092" qw="-0.2427961" />
                 </offset>
             </connection>
             <connection name="con_turret_102" group="group_arm_down_left" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="-575.6363" y="-267.7617" z="151.9409" />
+                    <position x="-575.6437" y="-267.7519" z="151.9421" />
                     <quaternion qx="0.7219908" qy="0.2065169" qz="0.6141092" qw="-0.2427961" />
                 </offset>
             </connection>
             <connection name="con_turret_103" group="group_flank_up_right" tags=" turret large standard missile hittable combat">
                 <offset>
-                    <position x="579.3931" y="-160.4464" z="120.7609" />
+                    <position x="579.4062" y="-160.5058" z="120.7445" />
                     <quaternion qx="0.05562185" qy="-0.9303963" qz="-0.158946" qw="-0.3255843" />
                 </offset>
             </connection>
             <connection name="con_turret_104" group="group_flank_up_left" tags=" turret large standard missile hittable combat">
                 <offset>
-                    <position x="-579.3931" y="-160.4464" z="120.7609" />
+                    <position x="-579.4062" y="-160.5058" z="120.7445" />
                     <quaternion qx="0.05562185" qy="0.9303963" qz="0.158946" qw="-0.3255843" />
                 </offset>
             </connection>
@@ -1620,13 +1620,13 @@
             </connection>
             <connection name="con_turret_109" group="group_flank_down_right" tags=" turret large standard missile hittable combat">
                 <offset>
-                    <position x="619.395" y="-315.8537" z="139.9142" />
+                    <position x="619.45" y="-315.8217" z="139.922" />
                     <quaternion qx="0.6538818" qy="-0.3279041" qz="-0.5676842" qw="-0.3776932" />
                 </offset>
             </connection>
             <connection name="con_turret_110" group="group_flank_down_left" tags=" turret large standard missile hittable combat">
                 <offset>
-                    <position x="-619.395" y="-315.8537" z="139.9142" />
+                    <position x="-619.45" y="-315.8217" z="139.922" />
                     <quaternion qx="0.6538818" qy="0.3279041" qz="0.5676842" qw="-0.3776932" />
                 </offset>
             </connection>
@@ -1644,13 +1644,13 @@
             </connection>
             <connection name="con_turret_113" group="group_flank_down_right" tags=" turret large standard missile hittable combat">
                 <offset>
-                    <position x="499.8915" y="-179.5737" z="-360.0107" />
+                    <position x="499.8886" y="-179.5782" z="-360.011" />
                     <quaternion qx="0.7104618" qy="-0.1908278" qz="-0.643803" qw="-0.2105859" />
                 </offset>
             </connection>
             <connection name="con_turret_114" group="group_flank_down_left" tags=" turret large standard missile hittable combat">
                 <offset>
-                    <position x="-499.8915" y="-179.5737" z="-360.0107" />
+                    <position x="-499.8886" y="-179.5782" z="-360.011" />
                     <quaternion qx="0.7104618" qy="0.1908278" qz="0.643803" qw="-0.2105859" />
                 </offset>
             </connection>
@@ -1740,13 +1740,13 @@
             </connection>
             <connection name="con_turret_129" group="group_loop_up_right" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="471.8424" y="47.8641" z="-1191.908" />
+                    <position x="471.8424" y="47.86411" z="-1191.908" />
                     <quaternion qx="0.2702692" qy="-0.7283989" qz="-0.4702407" qw="-0.4186446" />
                 </offset>
             </connection>
             <connection name="con_turret_130" group="group_loop_up_left" tags=" turret medium standard missile hittable combat">
                 <offset>
-                    <position x="-471.8424" y="47.8641" z="-1191.908" />
+                    <position x="-471.8424" y="47.86411" z="-1191.908" />
                     <quaternion qx="0.2702692" qy="0.7283989" qz="0.4702407" qw="-0.4186446" />
                 </offset>
             </connection>
@@ -1954,8 +1954,8 @@
                             </lod>
                         </lods>
                         <size>
-                            <max x="784.8463" y="356.3987" z="1350" />
-                            <center x="-1.525879e-05" y="-2.698868" z="0" />
+                            <max x="784.8463" y="354.5746" z="1350" />
+                            <center x="-1.525879e-05" y="-0.8747406" z="0" />
                         </size>
                     </part>
                 </parts>
