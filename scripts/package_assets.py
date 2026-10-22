@@ -48,19 +48,28 @@ def main():
         if new_connections.get(name) != expected:
             raise ValueError(f"export changes existing connection contract: {name}")
     additions = new_connections.keys() - old_connections.keys()
-    allowed = {f"con_shieldgen_m_{i:03d}" for i in range(1, 15)}
-    integrated = {f"con_turret_integrated_{i:02d}" for i in range(1, 5)}
-    allowed |= integrated
-    if not additions <= allowed or any(
-        new_connections[name][0]
-        != (
-            frozenset("turret large andromeda hittable combat".split())
-            if name in integrated
-            else frozenset(("medium", "shield", "hittable", "standard"))
+    expected_tags = {
+        f"con_shieldgen_m_{i:03d}": frozenset(("medium", "shield", "hittable", "standard"))
+        for i in range(1, 148)
+    }
+    expected_tags.update(
+        (
+            f"con_turret_integrated_{i:02d}",
+            frozenset("turret large andromeda hittable combat".split()),
         )
-        for name in additions
-    ):
-        raise ValueError("unexpected new equipment connections")
+        for i in range(1, 5)
+    )
+    standard_turrets = {
+        frozenset(f"turret {size} standard missile hittable combat".split())
+        for size in ("large", "medium")
+    }
+    for name in additions:
+        tags = new_connections[name][0]
+        if name.startswith("con_turret_") and name[len("con_turret_") :].isdigit():
+            if not 37 <= int(name[len("con_turret_") :]) <= 154 or tags not in standard_turrets:
+                raise ValueError(f"unexpected new equipment connection: {name}")
+        elif expected_tags.get(name) != tags:
+            raise ValueError(f"unexpected new equipment connection: {name}")
     component = tree.find("component")
     if component is None or component.get("name") != NAME or component.get("class") != "ship_xl":
         raise ValueError("unexpected ship component")

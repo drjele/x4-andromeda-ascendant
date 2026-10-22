@@ -118,7 +118,7 @@ Three things about connections are easy to get wrong and cost real time:
   `extralarge shield standard`. The role word alone is not enough — without a size the game offers no slot at all.
 - **Turret and shield orientation follows the mounting normal.** In exported X4 coordinates a connection's local `+Y` points away from the hull. In the Blender scene this is local `+Z`; mount rotations align that axis with the sampled surface normal.
 - **This ship groups turrets, engines and local shields by station:**
-  `group_front_up_left`, `group_back_down_mid` and so on. Engine groups must be separate from turret groups, and turret/engine groups have local shields. Main weapons must stay ungrouped for the standard equipment menu; both use the same empty group. Their mounts are selectable, not tagged `mandatory`. Fourteen medium shield slots protect these groups in addition to the four existing XL shield slots.
+  `group_front_up_left`, `group_back_down_mid` and so on. Engine groups must be separate from turret groups, and turret/engine groups have local shields. Main weapons must stay ungrouped for the standard equipment menu; both use the same empty group. Their mounts are selectable, not tagged `mandatory`. Fourteen medium shield slots protect these groups in addition to the four existing XL shield slots. Twenty further zone groups (`group_arm_up_left`, `group_deck_down_mid`, …) hold 118 additional turrets, each with its own medium shield, two for large turrets.
 
 The build script retains loaded addons when clearing the scene. It writes `extratags` and `group_name`, and copies the latter onto the addon's registered `groups` property before export. Use `--export` with the Egosoft addons enabled. The script exits with an error if either the DAE or component XML is missing.
 
@@ -291,7 +291,7 @@ The `extension/` directory contains the shipped XML, meshes, physics and texture
 - Source conversion, legacy winding repair, LODs, collision, wreck and physics assets have been exported through Blender and XUConverter.
 - The four original assemblies were separated from the static hull into a shared experimental component: socket, yaw body, pitch barrels and two muzzle connections. The code uses the original mesh geometry with Argon L beam firing parameters, rather than an Argon turret model. Its intended in-game appearance and behavior have not been confirmed.
 - The latest run passed 28 regression tests, Blender geometry/transform checks and XUConverter conversion with zero reported errors. These checks do **not** prove that the turrets work in X4.
-- Stable existing connection names, exclusive engine/main-weapon tags, separate engine groups and fourteen local shield slots are present. Blueprint recovery is implemented for ship, engine, main weapon and experimental turret; recovery across old saves and new games is not fully accepted.
+- Stable existing connection names, exclusive engine/main-weapon tags, separate engine groups, fourteen local shield slots and the zone turrets with their 133 medium shields are present. Blueprint recovery is implemented for ship, engine, main weapon and experimental turret; recovery across old saves and new games is not fully accepted.
 
 ### Open
 

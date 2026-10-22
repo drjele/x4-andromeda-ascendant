@@ -47,8 +47,8 @@ assert set(mesh.color_attributes.keys()) == {"col", "idcode", "paintmodmask"}
 assert all(entry.color[0] == 0 for entry in mesh.color_attributes["paintmodmask"].data)
 assert all(0.1 < entry.color[0] < 0.3 for entry in mesh.color_attributes["col"].data)
 assert mesh.uv_layers.active.name == "uv1"
-assert len(IMPORTER["MOUNTS"]) == 54
-assert len({mount[0] for mount in IMPORTER["MOUNTS"]}) == 54
+assert len(IMPORTER["MOUNTS"]) == 305
+assert len({mount[0] for mount in IMPORTER["MOUNTS"]}) == 305
 print("Blender geometry, ray intersections, orientation and vertex channel checks passed")
 
 if "--" in sys.argv:
@@ -74,6 +74,10 @@ if "--" in sys.argv:
             length_axis = rotation @ Vector((0, 1, 0))
             expected = Vector((0, 1, 0)) - up * up.y
             assert length_axis.dot(expected.normalized()) > 0.9999, name
+    mounted = [bpy.data.objects[name].location for name, _, _, _ in IMPORTER["MOUNTS"]]
+    for location in mounted:
+        mirrored = Vector((-location.x, location.y, location.z))
+        assert min((other - mirrored).length for other in mounted) < 0.01, location
     for name in ("con_weapon_xl_01", "con_weapon_xl_02"):
         obj = bpy.data.objects[name]
         assert obj.rotation_euler.to_matrix() @ Vector((0, 1, 0)) == Vector((0, 1, 0)), name
