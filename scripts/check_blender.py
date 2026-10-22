@@ -7,6 +7,7 @@ from pathlib import Path
 
 import bpy
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 IMPORTER = runpy.run_path(str(Path(__file__).resolve().parents[1] / "andromeda_import.py"))
 IMPORTER["clear_scene"]()
@@ -74,6 +75,19 @@ if "--" in sys.argv:
             length_axis = rotation @ Vector((0, 1, 0))
             expected = Vector((0, 1, 0)) - up * up.y
             assert length_axis.dot(expected.normalized()) > 0.9999, name
+    for obj in bpy.context.scene.objects:
+        if obj.type == "MESH" and obj.name.startswith("part_main"):
+            mesh = obj.data
+            tree = BVHTree.FromPolygons(
+                [v.co for v in mesh.vertices], [list(p.vertices) for p in mesh.polygons]
+            )
+            used = {index for polygon in mesh.polygons for index in polygon.vertices}
+            worst = max(
+                tree.find_nearest(Vector((-v.co.x, v.co.y, v.co.z)))[3]
+                for v in mesh.vertices
+                if v.index in used
+            )
+            assert worst < 0.05, (obj.name, worst)
     mounted = [bpy.data.objects[name].location for name, _, _, _ in IMPORTER["MOUNTS"]]
     for location in mounted:
         mirrored = Vector((-location.x, location.y, location.z))

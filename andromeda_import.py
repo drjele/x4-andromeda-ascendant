@@ -22,6 +22,8 @@ LOD_RATIO = (
     ("part_main.LOD3", 0.1),
 )
 SAMPLE_RADIUS = 0.035
+SYMMETRY_TOLERANCE = 0.01
+SEAM_NUDGE = 0.01
 DORSAL_FACING = (0.0, 0.0, 0.0)
 HULL_CORE_FRACTION = 0.12
 MAIN_WEAPON_TAGS = "combat extralarge andromeda weapon"
@@ -1931,6 +1933,44 @@ def normalize(mesh_object):
     return factor, center
 
 
+def symmetrize(mesh_object):
+    # The source is symmetric to a centimetre almost everywhere; make it exact so pads, mounts
+    # and shading match on both sides. Keep the right half and mirror it across the centre plane.
+    mesh = mesh_object.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bmesh.ops.bisect_plane(
+        bm,
+        geom=bm.verts[:] + bm.edges[:] + bm.faces[:],
+        dist=SYMMETRY_TOLERANCE,
+        plane_co=(0.0, 0.0, 0.0),
+        plane_no=(1.0, 0.0, 0.0),
+        clear_inner=True,
+    )
+    for vertex in bm.verts:
+        if abs(vertex.co.x) < SYMMETRY_TOLERANCE:
+            vertex.co.x = 0.0
+    bmesh.ops.mirror(
+        bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], axis="X", merge_dist=SYMMETRY_TOLERANCE
+    )
+    # Mirroring keeps the vertex order, so the copies face inward until reversed.
+    bmesh.ops.reverse_faces(
+        bm, faces=[face for face in bm.faces if face.calc_center_median().x < -SYMMETRY_TOLERANCE]
+    )
+    seen = set()
+    duplicates = []
+    for face in bm.faces:
+        key = frozenset(vertex.index for vertex in face.verts)
+        if key in seen:
+            duplicates.append(face)
+        seen.add(key)
+    bmesh.ops.delete(bm, geom=duplicates, context="FACES_ONLY")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    bm.to_mesh(mesh)
+    bm.free()
+    mesh.update()
+
+
 def repair_winding(mesh_object):
     mesh = mesh_object.data
     opposite = []
@@ -2017,6 +2057,7 @@ def build_parts(source):
             modifier = mesh_object.modifiers.new(name="decimate", type="DECIMATE")
             modifier.ratio = ratio
             apply_modifiers(mesh_object)
+            symmetrize(mesh_object)
         correct_shading(mesh_object)
         mesh_object.data.name = name
         made.append(mesh_object)
@@ -2068,6 +2109,14 @@ class HullSurface:
             [v.co for v in mesh.vertices], [list(p.vertices) for p in mesh.polygons]
         )
         self.height = max(abs(v.co.z) for v in mesh.vertices) + SHIP_LENGTH
+
+    def cast(self, origin, direction, distance):
+        # A ray exactly on the mirrored centre seam can slip between the two halves.
+        for nudge in (0.0, SEAM_NUDGE, -SEAM_NUDGE):
+            hit, _, _, _ = self.tree.ray_cast(origin + Vector((nudge, 0, 0)), direction, distance)
+            if hit is not None:
+                return hit
+        return None
 
     def nearest_layer(self, start, sign, height):
         # Surfaces stack under decks and arms; take the outward one nearest the seed height.
@@ -2162,9 +2211,7 @@ def pad_roughness(surface, point, frame, half_extents):
     heights = []
     for offset in pad_outline(right, forward, half_extents, PAD_SMALL_SEGMENTS):
         for scale in (0.5, 1.0, pad_flare(half_extents)):
-            hit, _, _, _ = surface.tree.ray_cast(
-                point + offset * scale + normal * reach, -normal, 2 * reach
-            )
+            hit = surface.cast(point + offset * scale + normal * reach, -normal, 2 * reach)
             if hit is not None:
                 heights.append((hit - point).dot(normal))
     return max(heights) - min(heights) if heights else 0.0
@@ -2191,7 +2238,7 @@ def add_pad(bm, surface, point, frame, half_extents, top=None, flat=None):
     outline = pad_outline(right, forward, half_extents, segments)
 
     def height(offset):
-        hit, _, _, _ = surface.tree.ray_cast(point + offset + normal * reach, -normal, 2 * reach)
+        hit = surface.cast(point + offset + normal * reach, -normal, 2 * reach)
         return None if hit is None else (hit - point).dot(normal)
 
     inner = sorted(
@@ -2416,6 +2463,7 @@ def main():
 
     turret_stations = remove_from_hull(source)
     factor, center = normalize(source)
+    symmetrize(source)
     surface = HullSurface(source.data)
     vertex = [v.co.copy() for v in source.data.vertices]
     placed = add_pads(source, surface, mount_frames(surface))
@@ -2426,8 +2474,14 @@ def main():
         (SOURCE_DIRECTORY / f"{SOURCE_STEM}_points.json").read_text(encoding="utf-8")
     )
     place_mounts(placed)
+    stations = [(pivot - center) * factor for pivot, _ in turret_stations]
     for index, (pivot, frame) in enumerate(turret_stations, 1):
-        location = (pivot - center) * factor
+        location = stations[index - 1]
+        # Average with the mirrored partner station so the pair matches the symmetric hull.
+        partner = min(
+            stations, key=lambda other: (other - Vector((-location.x, *location.yz))).length
+        )
+        location = (location + Vector((-partner.x, partner.y, partner.z))) * 0.5
         add_connection(
             f"con_turret_integrated_{index:02d}",
             TAGS,

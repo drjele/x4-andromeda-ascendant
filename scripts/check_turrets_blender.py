@@ -50,7 +50,8 @@ ship_file, turret_file = map(Path, sys.argv[sys.argv.index("--") + 1 :])
 bpy.ops.wm.open_mainfile(filepath=str(ship_file))
 for index, (pivot, frame) in enumerate(positions, 1):
     mount = bpy.data.objects[f"con_turret_integrated_{index:02d}"]
-    assert (mount.location - (pivot - center) * factor).length < 0.001
+    # Mounts are averaged with their mirrored partner, which moves them by under a centimetre.
+    assert (mount.location - (pivot - center) * factor).length < 0.02
     for axis in range(3):
         assert (mount.rotation_euler.to_matrix().col[axis] - frame.col[axis]).length < 0.001
 bpy.ops.wm.open_mainfile(filepath=str(turret_file))
