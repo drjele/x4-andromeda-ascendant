@@ -10,6 +10,7 @@ import bmesh
 import bpy
 from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
+from mathutils.kdtree import KDTree
 
 SOURCE_DIRECTORY = Path.home() / "x4mod/source"
 SOURCE_STEM = "XMC"
@@ -31,6 +32,41 @@ ENGINE_TAGS = "engine extralarge andromeda"
 HULL_BASE_COLOUR = (0.60, 0.62, 0.66)
 HULL_TEXTURE_METRES = 120.0
 PAD_TINT = 0.6
+# Livery after the series: ribbed light channels on the inner faces of the great arcs (red) and of
+# the aft loops (blue). Ids 1 and 2 are the lit ribs, 3 and 4 the dark gaps between them.
+STRIP_COLOURS = {
+    1: (0.9, 0.05, 0.25),
+    2: (0.15, 0.75, 1.0),
+    3: (0.3, 0.02, 0.08),
+    4: (0.03, 0.2, 0.35),
+}
+# Each strip: lit and gap ids, the crest span traced, the part of it that carries lights, how far
+# below the crest the inner face is sought (the loops are much thinner than the arcs) and its width.
+STRIPS = (
+    (1, 3, 1250.0, 150.0, 260.0, 900.0, 20.0, 22.0),
+    (2, 4, -700.0, -1320.0, -980.0, -860.0, 5.0, 12.0),
+)
+# The cyan crescent grille under the central hull: station, half-span, sweep at the tips and width.
+BELLY_GRILLE = (230.0, 70.0, 20.0, 16.0)
+RIB_STEP = 2.0
+RIB_PATTERN = (True, True, False)
+STRIP_STEP = 10.0
+STRIP_RAISE = 0.4
+STRIP_MIN_AREA = 0.01
+STRIP_SINK = 0.2
+STRIP_SMOOTHING = 8
+STRIP_SEARCH = 40.0
+STRIP_SAMPLES = 7
+CREST_SMOOTH_RADIUS = 30.0
+# The dorsal structures read rounder on the series model than on the low-poly source.
+DORSAL_FLOOR = 120.0
+DORSAL_HALF_WIDTH = 250.0
+DORSAL_AFT = -400.0
+DORSAL_PASSES = 4
+# Taubin smoothing: a shrinking and a slightly larger inflating step, so the region keeps its volume.
+DORSAL_SHRINK = 0.5
+DORSAL_INFLATE = -0.53
+CREST_SMOOTH_PASSES = 4
 UNDERSIDE_SHADE = 0.12
 OCCLUSION_STRENGTH = 0.5
 OCCLUSION_RAYS = 16
@@ -2026,6 +2062,209 @@ def hull_shades(mesh):
     return shades
 
 
+def crest_line(surface, first, last):
+    # Seen from above, the arc or loop is a run of hull at each station; its highest point is the
+    # crest the strip follows. Start on the widest outboard run, then search near the previous
+    # crest, and stop where the crest jumps to another structure.
+    step = STRIP_STEP if last > first else -STRIP_STEP
+    line = []
+    y = first
+    while (y - last) * step <= 0:
+        runs, run = [], None
+        for index in range(75, 400):
+            x = index * 2.0
+            hit, _, _, _ = surface.tree.ray_cast(Vector((x, y, 3000.0)), Vector((0, 0, -1)), 6000.0)
+            if hit is None:
+                run = None
+            elif run is not None and x - run[-1].x <= 2.1:
+                run.append(hit)
+            else:
+                run = [hit]
+                runs.append(run)
+        if not line:
+            outboard = [run for run in runs if 300.0 < run[0].x] or runs
+            top = max(max(outboard, key=lambda run: run[-1].x - run[0].x), key=lambda p: p.z)
+        else:
+            # Strands can merge into one run seen from above; stay near the previous crest.
+            near = [p for run in runs for p in run if abs(p.x - line[-1].x) < STRIP_SEARCH]
+            if not near:
+                break
+            top = max(near, key=lambda point: point.z)
+            if abs(top.z - line[-1].z) > 60.0:
+                break
+        line.append(top)
+        y += step
+    return line
+
+
+def round_dorsal(mesh_object):
+    # Split the dorsal edges once and relax the region, holding its border so it meets the rest of
+    # the hull without a step; the caller symmetrizes afterwards.
+    bm = bmesh.new()
+    bm.from_mesh(mesh_object.data)
+
+    def dorsal(vertex):
+        co = vertex.co
+        return DORSAL_FLOOR < co.z and abs(co.x) < DORSAL_HALF_WIDTH and DORSAL_AFT < co.y
+
+    edges = [edge for edge in bm.edges if all(dorsal(v) for v in edge.verts)]
+    bmesh.ops.subdivide_edges(bm, edges=edges, cuts=1, use_grid_fill=True, smooth=1.0)
+    # Open edges of the source mesh would pull apart into slivers, so they stay put.
+    region = [
+        v
+        for v in bm.verts
+        if dorsal(v)
+        and v.is_manifold
+        and not v.is_boundary
+        and all(dorsal(e.other_vert(v)) for e in v.link_edges)
+    ]
+    for _ in range(DORSAL_PASSES):
+        for strength in (DORSAL_SHRINK, DORSAL_INFLATE):
+            targets = {
+                v: sum((e.other_vert(v).co for e in v.link_edges), Vector()) / len(v.link_edges)
+                for v in region
+                if v.link_edges
+            }
+            for vertex, target in targets.items():
+                vertex.co = vertex.co.lerp(target, strength)
+    bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if 4 < len(f.verts)])
+    bm.to_mesh(mesh_object.data)
+    bm.free()
+    mesh_object.data.update()
+    return len(region)
+
+
+def smooth_crests(mesh_object, surface):
+    # Fair the hull along the strip crests so the strips lie on a clean curve, as on the series
+    # model. Falloff keeps the change local; both halves move alike, so symmetry holds.
+    points = [p for _, _, first, last, *_ in STRIPS for p in crest_line(surface, first, last)]
+    points += [Vector((-p.x, p.y, p.z)) for p in points]
+    tree = KDTree(len(points))
+    for index, point in enumerate(points):
+        tree.insert(point, index)
+    tree.balance()
+    bm = bmesh.new()
+    bm.from_mesh(mesh_object.data)
+    weights = {}
+    for vertex in bm.verts:
+        _, _, distance = tree.find(vertex.co)
+        if None is not distance and distance < CREST_SMOOTH_RADIUS:
+            weights[vertex] = 0.5 * (1.0 - distance / CREST_SMOOTH_RADIUS)
+    for _ in range(CREST_SMOOTH_PASSES):
+        # Taubin steps keep the thin arcs and loops from shrinking.
+        for scale in (1.0, DORSAL_INFLATE / DORSAL_SHRINK):
+            targets = {
+                vertex: sum((edge.other_vert(vertex).co for edge in vertex.link_edges), Vector())
+                / len(vertex.link_edges)
+                for vertex in weights
+                if vertex.link_edges
+            }
+            for vertex, target in targets.items():
+                vertex.co = vertex.co.lerp(target, weights[vertex] * scale)
+    bm.to_mesh(mesh_object.data)
+    bm.free()
+    mesh_object.data.update()
+    return len(weights)
+
+
+def window(values, index):
+    chunk = values[max(0, index - STRIP_SMOOTHING) : index + STRIP_SMOOTHING + 1]
+    return sum(chunk, Vector()) / len(chunk)
+
+
+def inner_face(surface, crest, drop):
+    # The light channel runs on the inner face of the arc: cast outward from inside the ship,
+    # a little below the crest, and keep hits whose face looks back toward the centre plane.
+    origin = Vector((crest.x - 150.0, crest.y, crest.z - drop))
+    hit, normal, _, _ = surface.tree.ray_cast(origin, Vector((1, 0, 0)), 200.0)
+    if hit is None or normal.x > -0.4:
+        return None
+    return hit, normal
+
+
+def emit_strip(bm, surface, marker, stations, lit, gap, width, mirrors):
+    # The faceted hull makes points and normals wander; average both along the strip.
+    points = [window([h for h, _ in stations], i) for i in range(len(stations))]
+    normals = [window([n for _, n in stations], i).normalized() for i in range(len(stations))]
+    samples = []
+    for (a, na), (b, nb) in zip(zip(points, normals), zip(points[1:], normals[1:])):
+        steps = max(1, round((b - a).length / RIB_STEP))
+        for k in range(steps):
+            samples.append((a.lerp(b, k / steps), na.lerp(nb, k / steps).normalized()))
+    samples.append((points[-1], normals[-1]))
+    frames = []
+    previous = None
+    for i, (point, normal) in enumerate(samples):
+        tangent = (
+            samples[min(i + 1, len(samples) - 1)][0] - samples[max(i - 1, 0)][0]
+        ).normalized()
+        across = normal.cross(tangent).normalized()
+        if None is not previous and across.dot(previous) < 0:
+            across = -across
+        previous = across
+        frames.append((point, normal, across * (width * 0.5)))
+    for mirror in mirrors:
+        mirrored = Vector((mirror, 1.0, 1.0))
+        rows = []
+        for point, normal, across in frames:
+            row = []
+            for k in range(STRIP_SAMPLES):
+                t = 2.0 * k / (STRIP_SAMPLES - 1) - 1.0
+                # Every sample snaps to the nearest hull point and lifts along the hull's own normal
+                # there, so the strip follows the contour instead of a smoothed chord.
+                lift = STRIP_RAISE if abs(t) < 1.0 else -STRIP_SINK
+                landed, local, _, _ = surface.tree.find_nearest(point + across * t)
+                row.append(landed + local.normalized() * lift)
+            up = Vector((normal.x * mirror, normal.y, normal.z))
+            rows.append(([bm.verts.new(v * mirrored) for v in row], up))
+        for index, ((a, up), (b, _)) in enumerate(zip(rows, rows[1:])):
+            rib = lit if RIB_PATTERN[index % len(RIB_PATTERN)] else gap
+            for j in range(STRIP_SAMPLES - 1):
+                # Triangles, each turned outward on its own: a bent quad split later could flip.
+                for corners in ((a[j], b[j], b[j + 1]), (a[j], b[j + 1], a[j + 1])):
+                    edge = (corners[1].co - corners[0].co).cross(corners[2].co - corners[0].co)
+                    if edge.length < 2.0 * STRIP_MIN_AREA:
+                        # Neighbouring samples can snap onto the same hull point.
+                        continue
+                    face = bm.faces.new(corners)
+                    face.normal_update()
+                    if face.normal.dot(up) < 0:
+                        face.normal_flip()
+                    face[marker] = rib
+
+
+def add_strips(mesh_object, surface):
+    bm = bmesh.new()
+    bm.from_mesh(mesh_object.data)
+    marker = bm.faces.layers.int.get("livery") or bm.faces.layers.int.new("livery")
+    for lit, gap, first, last, low, high, drop, width in STRIPS:
+        crest = crest_line(surface, first, last)
+        stations = [
+            found
+            for found in (inner_face(surface, p, drop) for p in crest if low <= p.y <= high)
+            if found is not None
+        ]
+        if 3 <= len(stations):
+            emit_strip(bm, surface, marker, stations, lit, gap, width, (1.0, -1.0))
+    station, half_span, sweep, width = BELLY_GRILLE
+    stations = []
+    for index in range(int(-half_span), int(half_span) + 1, 2):
+        x = float(index)
+        y = station - sweep * (x / half_span) ** 2
+        hit, normal, _, _ = surface.tree.ray_cast(
+            Vector((x, y, -3000.0)), Vector((0, 0, 1)), 6000.0
+        )
+        if hit is not None:
+            stations.append((hit, normal))
+    if 3 <= len(stations):
+        # Centred on the axis, the crescent is its own mirror image.
+        emit_strip(bm, surface, marker, stations, 2, 4, width, (1.0,))
+    bm.normal_update()
+    bm.to_mesh(mesh_object.data)
+    bm.free()
+    mesh_object.data.update()
+
+
 def prepare_channels(mesh_object):
     mesh = mesh_object.data
     for layer in list(mesh.uv_layers):
@@ -2036,10 +2275,16 @@ def prepare_channels(mesh_object):
         axes = ((1, 2), (0, 2), (0, 1))[dominant]
         for index in polygon.loop_indices:
             position = mesh.vertices[mesh.loops[index].vertex_index].co
-            uv.data[index].uv = tuple(position[axis] / HULL_TEXTURE_METRES for axis in axes)
+            # Mirror the projection across the centre plane so the panel pattern is symmetric too.
+            mirrored = (abs(position.x), position.y, position.z)
+            uv.data[index].uv = tuple(mirrored[axis] / HULL_TEXTURE_METRES for axis in axes)
     shades = hull_shades(mesh)
     marker = mesh.attributes.get("pad")
     pads = [entry.value for entry in marker.data] if None is not marker else None
+    if None is not marker:
+        mesh.attributes.remove(marker)
+    marker = mesh.attributes.get("livery")
+    paints = [entry.value for entry in marker.data] if None is not marker else None
     if None is not marker:
         mesh.attributes.remove(marker)
     for existing in list(mesh.color_attributes):
@@ -2056,9 +2301,10 @@ def prepare_channels(mesh_object):
             continue
         for polygon in mesh.polygons:
             tint = PAD_TINT if pads is not None and pads[polygon.index] else 1.0
+            base = STRIP_COLOURS.get(paints[polygon.index] if paints else 0, HULL_BASE_COLOUR)
             for index in polygon.loop_indices:
                 shade = shades[mesh.loops[index].vertex_index] * tint
-                colour.data[index].color = (*(c * shade for c in HULL_BASE_COLOUR), 1.0)
+                colour.data[index].color = (*(c * shade for c in base), 1.0)
     mesh_object.data.materials.clear()
     mesh_object.data.materials.append(
         (bpy.data.materials.get(MATERIAL_NAME) or bpy.data.materials.new(MATERIAL_NAME))
@@ -2517,9 +2763,15 @@ def main():
     turret_stations = remove_from_hull(source)
     factor, center = normalize(source)
     symmetrize(source)
+    rounded = round_dorsal(source)
+    symmetrize(source)
+    print(f"andromeda: rounded {rounded} dorsal hull vertices")
+    smoothed = smooth_crests(source, HullSurface(source.data))
+    print(f"andromeda: faired {smoothed} hull vertices under the light strips")
     surface = HullSurface(source.data)
     vertex = [v.co.copy() for v in source.data.vertices]
     placed = add_pads(source, surface, mount_frames(surface))
+    add_strips(source, surface)
     prepare_channels(source)
     made = build_parts(source)
     bpy.data.objects.remove(source, do_unlink=True)
