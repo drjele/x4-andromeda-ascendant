@@ -16,6 +16,8 @@ SOURCE_DIRECTORY = Path.home() / "x4mod/source"
 SOURCE_STEM = "XMC"
 SHIP_LENGTH = 2700.0
 MATERIAL_NAME = "andromeda.andromeda_hull"
+# Lit strip ribs get their own glowing materials; dark gaps stay on the hull material.
+LIGHT_MATERIALS = {1: "andromeda.andromeda_lights_red", 2: "andromeda.andromeda_lights_cyan"}
 LOD_RATIO = (
     ("part_main", 1.0),
     ("part_main.LOD1", 0.55),
@@ -2306,11 +2308,14 @@ def prepare_channels(mesh_object):
                 shade = shades[mesh.loops[index].vertex_index] * tint
                 colour.data[index].color = (*(c * shade for c in base), 1.0)
     mesh_object.data.materials.clear()
-    mesh_object.data.materials.append(
-        (bpy.data.materials.get(MATERIAL_NAME) or bpy.data.materials.new(MATERIAL_NAME))
-    )
+    for name in (MATERIAL_NAME, *LIGHT_MATERIALS.values()):
+        mesh_object.data.materials.append(
+            bpy.data.materials.get(name) or bpy.data.materials.new(name)
+        )
+    slots = {livery_id: 1 + index for index, livery_id in enumerate(LIGHT_MATERIALS)}
     for polygon in mesh_object.data.polygons:
         polygon.use_smooth = True
+        polygon.material_index = slots.get(paints[polygon.index] if paints else 0, 0)
 
 
 def apply_modifiers(mesh_object):
