@@ -133,4 +133,21 @@ python3 scripts/package_turret.py /path/p1data/turrets --component "/path/p1[ass
 blender -b --python-exit-code 1 --python scripts/check_turrets_blender.py -- "/path/p1[assets]/andromeda/ship_and_xl_cruiser_01.blend" "/path/p1[assets]/turrets/turret_and_l_twin_01_mk1.blend"
 ```
 
+#### Differences from vanilla L turrets (2026-10-22, unverified in-game)
+
+The component XML was compared with the base-game `turret_arg_l_beam_01_mk1`, `turret_arg_l_plasma_01_mk1`, `turret_tel_l_beam_01_mk1` and `turret_par_l_laser_01_mk1`, extracted read-only from `01.cat`. All four agree with each other and differ from the custom turret in the following ways. These are candidates to test one at a time, not established causes:
+
+- The first connection is `container` with tags `contents` and value 0; the custom component has `space` with tags `turret`.
+- The aim target is `con_aimtarget_01`, offset up to the yaw pivot height (13.3 m on the Argon beam); the custom `con_aimtarget` sits at the socket origin.
+- The yaw and pitch parts are placed by connection offsets at their pivots; the custom parts have no offsets and carry their geometry from the origin.
+- The socket connection is tagged `part animation` with activation animations; the custom one has only `part`. Argon, Teladi and Paranid turrets ship no `.ani` file, so the near-empty custom `.ani` alone is unlikely to be the cause.
+- The custom macro adds `<weapon angle="1.4"/>`, which the Argon beam macro does not have.
+- The custom turret is about 64 m wide with 75 m barrels, several times a vanilla L turret.
+
+`scripts/render_preview.py` renders six orthographic views of any saved scene for visual review without starting the game:
+
+```sh
+blender -b --python-exit-code 1 --python scripts/render_preview.py -- "/path/p1[assets]/turrets/turret_and_l_twin_01_mk1.blend" /tmp/previews
+```
+
 The latest in-game test failed. Before calling this implementation functional, diagnose that failure and verify all four purchase slots, tracking and fire from both barrels, destruction/repair, and save/reload. Offline geometry and XML tests cannot establish combat behavior. Repetitive hull panel mapping and the seating of standard faction equipment on curved surfaces still need art work.
