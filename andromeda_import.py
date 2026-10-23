@@ -12,12 +12,18 @@ from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 from mathutils.kdtree import KDTree
 
+# The sibling modules (arms, turrets) are imported by name, also when this file is run by path.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 SOURCE_DIRECTORY = Path.home() / "x4mod/source"
 SOURCE_STEM = "XMC"
 SHIP_LENGTH = 2700.0
 MATERIAL_NAME = "andromeda.andromeda_hull"
 # Lit strip ribs get their own glowing materials; dark gaps stay on the hull material.
 LIGHT_MATERIALS = {1: "andromeda.andromeda_lights_red", 2: "andromeda.andromeda_lights_cyan"}
+# After the lights, so strip faces stay the slots between hull and DARK_SLOT.
+DARK_MATERIAL = "andromeda.andromeda_hull_dark"
+DARK_SLOT = 1 + len(LIGHT_MATERIALS)
 LOD_RATIO = (
     ("part_main", 1.0),
     ("part_main.LOD1", 0.55),
@@ -31,7 +37,14 @@ DORSAL_FACING = (0.0, 0.0, 0.0)
 HULL_CORE_FRACTION = 0.12
 MAIN_WEAPON_TAGS = "combat extralarge andromeda weapon"
 ENGINE_TAGS = "engine extralarge andromeda"
-HULL_BASE_COLOUR = (0.60, 0.62, 0.66)
+HULL_BASE_COLOUR = (0.66, 0.67, 0.72)
+DARK_BASE_COLOUR = (0.42, 0.42, 0.46)
+# Recesses on the dark panels fall toward black, as in the series stills.
+DARK_OCCLUSION_POWER = 1.8
+ARM_REACH = 100.0
+LOOP_REGION = (-350.0, 230.0)
+DARK_KEEL = 130.0
+DARK_UPWARD = 0.35
 HULL_TEXTURE_METRES = 120.0
 PAD_TINT = 0.6
 # Livery after the series: ribbed light channels on the inner faces of the great arcs (red) and of
@@ -42,19 +55,26 @@ STRIP_COLOURS = {
     3: (0.3, 0.02, 0.08),
     4: (0.03, 0.2, 0.35),
 }
-# Each strip: lit and gap ids, the crest span traced, the part of it that carries lights, how far
-# below the crest the inner face is sought (the loops are much thinner than the arcs) and its width.
-STRIPS = (
-    (1, 3, 1250.0, 150.0, 260.0, 900.0, 20.0, 22.0),
-    (2, 4, -700.0, -1320.0, -980.0, -860.0, 5.0, 12.0),
+# Crest spans of the arcs and the aft loops, faired before the hull is used.
+CREST_SPANS = ((1250.0, 0.0), (-700.0, -1320.0))
+# Start and end as fractions of the arc path, inset from the centreline as a share of its width, widths.
+ARC_STRIP = (0.07, 0.52, 0.25, (70.0, 2.0))
+# From, to, widest, shape exponent (0.5 an ellipse, near 0 a rounded box) and the direction the face looks.
+CYAN_PATCHES = (
+    ((429.0, -791.0, -81.0), (351.0, -711.0, -85.0), 30.0, 0.15, (0.6, 0.6, -0.1)),
+    ((640.0, -760.0, -105.0), (650.0, -630.0, -130.0), 40.0, 0.5, (0.65, 0.0, 0.6)),
 )
+PATCH_STEP = 4.0
+PATCH_REACH = 80.0
 # The cyan crescent grille under the central hull: station, half-span, sweep at the tips and width.
-BELLY_GRILLE = (230.0, 70.0, 20.0, 16.0)
+BELLY_GRILLE = (220.0, 80.0, 24.0, 26.0)
 RIB_STEP = 2.0
-RIB_PATTERN = (True, True, False)
+RIB_PATTERN = (True, True, True, False)
 STRIP_STEP = 10.0
 STRIP_RAISE = 0.4
 STRIP_MIN_AREA = 0.01
+# The last LOD index that still carries the light strips.
+STRIP_LODS = 1
 STRIP_SINK = 0.2
 STRIP_SMOOTHING = 8
 STRIP_SEARCH = 40.0
@@ -76,6 +96,7 @@ OCCLUSION_REACH = 150.0
 FORWARD_FACING = (0.0, 0.0, 0.0)
 ENGINE_SINK = 0.02
 PAD_LIFT = 0.2
+MOUNT_SINK = 0.2
 PAD_SEAT = 0.8
 PAD_SKIRT = 3.0
 PAD_SEGMENTS = 40
@@ -763,481 +784,481 @@ ZONE_MOUNTS = (
         "con_turret_063",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.1748148148148148, 0.49777777777777776, -0.07981562861689814),
+        (0.19747307671440972, 0.4500383843315972, -0.06559922960069445),
     ),
     (
         "con_shieldgen_m_044",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.17777777777777778, 0.4918518518518519, -0.07585756655092593),
+        (0.19562477394386574, 0.4560957845052083, -0.06764847366898148),
     ),
     (
         "con_turret_064",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.1748148148148148, 0.49777777777777776, -0.07981562861689814),
+        (-0.19747307671440972, 0.4500383843315972, -0.06559922960069445),
     ),
     (
         "con_shieldgen_m_045",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.17777777777777778, 0.4918518518518519, -0.07585756655092593),
+        (-0.19562477394386574, 0.4560957845052083, -0.06764847366898148),
     ),
     (
         "con_turret_065",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.2162962962962963, 0.36148148148148146, -0.03684606481481482),
+        (0.20011777524594906, 0.42121450918692127, -0.05653130425347222),
     ),
     (
         "con_shieldgen_m_046",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.21037037037037037, 0.36148148148148146, -0.038011293764467595),
+        (0.19802092375578703, 0.42645661530671297, -0.05822781032986111),
     ),
     (
         "con_turret_066",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.2162962962962963, 0.36148148148148146, -0.03684606481481482),
+        (-0.20011777524594906, 0.42121450918692127, -0.05653130425347222),
     ),
     (
         "con_shieldgen_m_047",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.21037037037037037, 0.36148148148148146, -0.038011293764467595),
+        (-0.19802092375578703, 0.42645661530671297, -0.05822781032986111),
     ),
     (
         "con_turret_067",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.2518518567085266, 0.2540740668773651, -0.09489863365888596),
+        (0.21686261212384259, 0.39744565610532406, -0.04801929615162037),
     ),
     (
         "con_shieldgen_m_048",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.2518518567085266, 0.24518518149852753, -0.0940287709236145),
+        (0.21520688657407408, 0.40211000795717594, -0.04959355107060185),
     ),
     (
         "con_turret_068",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.2518518567085266, 0.2540740668773651, -0.09489863365888596),
+        (-0.21686261212384259, 0.39744565610532406, -0.04801929615162037),
     ),
     (
         "con_shieldgen_m_049",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.2518518567085266, 0.24518518149852753, -0.0940287709236145),
+        (-0.21520688657407408, 0.40211000795717594, -0.04959355107060185),
     ),
     (
         "con_turret_069",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.2311111111111111, 0.2637037037037037, -0.0031129286024305556),
+        (0.21814647533275464, 0.3681601291232639, -0.03897063078703704),
     ),
     (
         "con_shieldgen_m_050",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.22518518518518518, 0.2637037037037037, -0.0049300582320601855),
+        (0.21633081506799767, 0.37353483977141205, -0.040682327835648145),
     ),
     (
         "con_turret_070",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.2311111111111111, 0.2637037037037037, -0.0031129286024305556),
+        (-0.21814647533275464, 0.3681601291232639, -0.03897063078703704),
     ),
     (
         "con_shieldgen_m_051",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.22518518518518518, 0.2637037037037037, -0.0049300582320601855),
+        (-0.21633081506799767, 0.37353483977141205, -0.040682327835648145),
     ),
     (
         "con_turret_071",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.2548148148148148, 0.2311111111111111, -0.09747282805266204),
+        (0.23412102593315973, 0.34318852177372683, -0.03133282696759259),
     ),
     (
         "con_shieldgen_m_052",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.2518518518518518, 0.23407407407407407, -0.09294157805266204),
+        (0.2326999240451389, 0.3479782217520255, -0.03261284722222222),
     ),
     (
         "con_turret_072",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.2548148148148148, 0.2311111111111111, -0.09747282805266204),
+        (-0.23412102593315973, 0.34318852177372683, -0.03133282696759259),
     ),
     (
         "con_shieldgen_m_053",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.2518518518518518, 0.23407407407407407, -0.09294157805266204),
+        (-0.2326999240451389, 0.3479782217520255, -0.03261284722222222),
     ),
     (
         "con_turret_073",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.2311111111111111, 0.16592592592592592, 0.03316514756944444),
+        (0.23285576714409723, 0.3131322337962963, -0.021538447627314813),
     ),
     (
         "con_shieldgen_m_054",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.2311111111111111, 0.17185185185185184, 0.03136298285590278),
+        (0.23174732349537036, 0.3186743842230903, -0.023402235243055555),
     ),
     (
         "con_turret_074",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.2311111111111111, 0.16592592592592592, 0.03316514756944444),
+        (-0.23285576714409723, 0.3131322337962963, -0.021538447627314813),
     ),
     (
         "con_shieldgen_m_055",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.2311111111111111, 0.17185185185185184, 0.03136298285590278),
+        (-0.23174732349537036, 0.3186743842230903, -0.023402235243055555),
     ),
     (
         "con_turret_075",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.2414814829826355, 0.13777777552604675, -0.08051170408725739),
+        (0.24296296296296296, 0.2859444173177083, -0.012292842158564814),
     ),
     (
         "con_shieldgen_m_056",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.2392592579126358, 0.13111111521720886, -0.08057011663913727),
+        (0.2423666720920139, 0.29223709671585646, -0.014506202980324075),
     ),
     (
         "con_turret_076",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.2414814829826355, 0.13777777552604675, -0.08051170408725739),
+        (-0.24296296296296296, 0.2859444173177083, -0.012292842158564814),
     ),
     (
         "con_shieldgen_m_057",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.2392592579126358, 0.13111111521720886, -0.08057011663913727),
+        (-0.2423666720920139, 0.29223709671585646, -0.014506202980324075),
     ),
     (
         "con_turret_077",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.21925925925925926, 0.08592592592592592, 0.05740360966435185),
+        (0.23851851851851852, 0.25800778989438655, -0.00255859375),
     ),
     (
         "con_shieldgen_m_058",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.21333333333333335, 0.08592592592592592, 0.06247698748553241),
+        (0.23777777777777778, 0.2635356987847222, -0.004651511863425926),
     ),
     (
         "con_turret_078",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.21925925925925926, 0.08592592592592592, 0.05740360966435185),
+        (-0.23851851851851852, 0.25800778989438655, -0.00255859375),
     ),
     (
         "con_shieldgen_m_059",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.21333333333333335, 0.08592592592592592, 0.06247698748553241),
+        (-0.23777777777777778, 0.2635356987847222, -0.004651511863425926),
     ),
     (
         "con_turret_079",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.14814814814814814, 0.056296296296296296, 0.08793289749710648),
+        (0.24185185185185185, 0.1925925925925926, -0.08844573409469039),
     ),
     (
         "con_shieldgen_m_060",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.15703703703703703, 0.056296296296296296, 0.08653351960358796),
+        (0.24037037037037037, 0.18666666666666668, -0.08860729076244213),
     ),
     (
         "con_turret_080",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.14814814814814814, 0.056296296296296296, 0.08793289749710648),
+        (-0.24185185185185185, 0.1925925925925926, -0.08844573409469039),
     ),
     (
         "con_shieldgen_m_061",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.15703703703703703, 0.056296296296296296, 0.08653351960358796),
+        (-0.24037037037037037, 0.18666666666666668, -0.08860729076244213),
     ),
     (
         "con_turret_081",
         "turret medium standard missile hittable combat",
         "group_arm_up_right",
-        (0.24, 0.056296296296296296, -0.06611884223090278),
+        (0.23296296296296296, 0.14074074074074075, -0.08417847244827836),
     ),
     (
         "con_shieldgen_m_062",
         "medium shield hittable standard",
         "group_arm_up_right",
-        (0.23407407407407407, 0.05925925925925926, -0.06599627459490741),
+        (0.23222222222222222, 0.1348148148148148, -0.0849799375180845),
     ),
     (
         "con_turret_082",
         "turret medium standard missile hittable combat",
         "group_arm_up_left",
-        (-0.24, 0.056296296296296296, -0.06611884223090278),
+        (-0.23296296296296296, 0.14074074074074075, -0.08417847244827836),
     ),
     (
         "con_shieldgen_m_063",
         "medium shield hittable standard",
         "group_arm_up_left",
-        (-0.23407407407407407, 0.05925925925925926, -0.06599627459490741),
+        (-0.23222222222222222, 0.1348148148148148, -0.0849799375180845),
     ),
     (
         "con_turret_083",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.1748148148148148, 0.49777777777777776, -0.0888820563422309),
+        (0.19559993037471066, 0.44433349609375, -0.08523640385380497),
     ),
     (
         "con_shieldgen_m_064",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.1748148148148148, 0.4918518518518519, -0.0919775503653067),
+        (0.193767248083044, 0.449682300708912, -0.08436682807074652),
     ),
     (
         "con_turret_084",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.1748148148148148, 0.49777777777777776, -0.0888820563422309),
+        (-0.19559993037471066, 0.44433349609375, -0.08523640385380497),
     ),
     (
         "con_shieldgen_m_065",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.1748148148148148, 0.4918518518518519, -0.0919775503653067),
+        (-0.193767248083044, 0.449682300708912, -0.08436682807074652),
     ),
     (
         "con_turret_085",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.23037037253379822, 0.3651851713657379, -0.04709608107805252),
+        (0.20929669415509258, 0.4079622847945602, -0.06647588659215857),
     ),
     (
         "con_shieldgen_m_066",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.22592592239379883, 0.3785185217857361, -0.051954299211502075),
+        (0.20701709888599537, 0.41306260850694443, -0.06814888283058448),
     ),
     (
         "con_turret_086",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.23037037253379822, 0.3651851713657379, -0.04709608107805252),
+        (-0.20929669415509258, 0.4079622847945602, -0.06647588659215857),
     ),
     (
         "con_shieldgen_m_067",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.22592592239379883, 0.3785185217857361, -0.051954299211502075),
+        (-0.20701709888599537, 0.41306260850694443, -0.06814888283058448),
     ),
     (
         "con_turret_087",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.2222222222222222, 0.3111111111111111, -0.10569123444733797),
+        (0.22125734682436343, 0.37093071831597224, -0.05524974681712963),
     ),
     (
         "con_shieldgen_m_068",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.22518518518518518, 0.30518518518518517, -0.1067538791232639),
+        (0.21954967357494212, 0.3763257740162037, -0.056878752531828704),
     ),
     (
         "con_turret_088",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.2222222222222222, 0.3111111111111111, -0.10569123444733797),
+        (-0.22125734682436343, 0.37093071831597224, -0.05524974681712963),
     ),
     (
         "con_shieldgen_m_069",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.22518518518518518, 0.30518518518518517, -0.1067538791232639),
+        (-0.21954967357494212, 0.3763257740162037, -0.056878752531828704),
     ),
     (
         "con_turret_089",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.21925925925925926, 0.2637037037037037, -0.01459507977520978),
+        (0.23255043312355325, 0.33354417588975693, -0.044164343939887156),
     ),
     (
         "con_shieldgen_m_070",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.21925925925925926, 0.2696296296296296, -0.017811912254050925),
+        (0.23143584074797455, 0.33911709255642364, -0.045774428756148726),
     ),
     (
         "con_turret_090",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.21925925925925926, 0.2637037037037037, -0.01459507977520978),
+        (-0.23255043312355325, 0.33354417588975693, -0.044164343939887156),
     ),
     (
         "con_shieldgen_m_071",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.21925925925925926, 0.2696296296296296, -0.017811912254050925),
+        (-0.23143584074797455, 0.33911709255642364, -0.045774428756148726),
     ),
     (
         "con_turret_091",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.24592592592592594, 0.23407407407407407, -0.10974088315610532),
+        (0.23798884639033566, 0.29524088541666665, -0.03202040495695891),
     ),
     (
         "con_shieldgen_m_072",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.24296296296296296, 0.24, -0.11065101906105324),
+        (0.2376137966579861, 0.3008199055989583, -0.03386582268608941),
     ),
     (
         "con_turret_092",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.24592592592592594, 0.23407407407407407, -0.10974088315610532),
+        (-0.23798884639033566, 0.29524088541666665, -0.03202040495695891),
     ),
     (
         "con_shieldgen_m_073",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.24296296296296296, 0.24, -0.11065101906105324),
+        (-0.2376137966579861, 0.3008199055989583, -0.03386582268608941),
     ),
     (
         "con_turret_093",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.22518518567085266, 0.15777777135372162, 0.017807798460125923),
+        (0.24222222222222223, 0.25695699055989585, -0.0189426436247649),
     ),
     (
         "con_shieldgen_m_074",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.21629630029201508, 0.15777777135372162, 0.021436993032693863),
+        (0.24157624421296298, 0.2624891040943287, -0.02090687363236039),
     ),
     (
         "con_turret_094",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.22518518567085266, 0.15777777135372162, 0.017807798460125923),
+        (-0.24222222222222223, 0.25695699055989585, -0.0189426436247649),
     ),
     (
         "con_shieldgen_m_075",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.21629630029201508, 0.15777777135372162, 0.021436993032693863),
+        (-0.24157624421296298, 0.2624891040943287, -0.02090687363236039),
     ),
     (
         "con_turret_095",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.2577777777777778, 0.13925925925925925, -0.10847462972005208),
+        (0.2348148148148148, 0.22285230848524307, -0.005018591704191985),
     ),
     (
         "con_shieldgen_m_076",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.2518518518518518, 0.13925925925925925, -0.11385026719835069),
+        (0.2348148148148148, 0.2283797878689236, -0.007050416734483507),
     ),
     (
         "con_turret_096",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.2577777777777778, 0.13925925925925925, -0.10847462972005208),
+        (-0.2348148148148148, 0.22285230848524307, -0.005018591704191985),
     ),
     (
         "con_shieldgen_m_077",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.2518518518518518, 0.13925925925925925, -0.11385026719835069),
+        (-0.2348148148148148, 0.2283797878689236, -0.007050416734483507),
     ),
     (
         "con_turret_097",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.21111111342906952, 0.09111110866069794, 0.0456528514623642),
+        (0.23111332646122684, 0.1851962732385706, 0.009681007950394243),
     ),
     (
         "con_shieldgen_m_078",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.20666666328907013, 0.08666666597127914, 0.047722168266773224),
+        (0.2321884494357639, 0.1905718768084491, 0.007503208584255642),
     ),
     (
         "con_turret_098",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.21111111342906952, 0.09111110866069794, 0.0456528514623642),
+        (-0.23111332646122684, 0.1851962732385706, 0.009681007950394243),
     ),
     (
         "con_shieldgen_m_079",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.20666666328907013, 0.08666666597127914, 0.047722168266773224),
+        (-0.2321884494357639, 0.1905718768084491, 0.007503208584255642),
     ),
     (
         "con_turret_099",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.14814814814814814, 0.056296296296296296, 0.07067283347800926),
+        (0.21888888888888888, 0.35648148148148145, -0.10002383761935764),
     ),
     (
         "con_shieldgen_m_080",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.15407407407407409, 0.056296296296296296, 0.06877421626338252),
+        (0.22037037037037038, 0.35055555555555556, -0.1006874254014757),
     ),
     (
         "con_turret_100",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.14814814814814814, 0.056296296296296296, 0.07067283347800926),
+        (-0.21888888888888888, 0.35648148148148145, -0.10002383761935764),
     ),
     (
         "con_shieldgen_m_081",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.15407407407407409, 0.056296296296296296, 0.06877421626338252),
+        (-0.22037037037037038, 0.35055555555555556, -0.1006874254014757),
     ),
     (
         "con_turret_101",
         "turret medium standard missile hittable combat",
         "group_arm_down_right",
-        (0.21333333333333335, 0.056296296296296296, -0.09899102105034722),
+        (0.2325925925925926, 0.2916666666666667, -0.10430113615813079),
     ),
     (
         "con_shieldgen_m_082",
         "medium shield hittable standard",
         "group_arm_down_right",
-        (0.2074074074074074, 0.056296296296296296, -0.09510111490885417),
+        (0.2337037037037037, 0.28574074074074074, -0.1045317699291088),
     ),
     (
         "con_turret_102",
         "turret medium standard missile hittable combat",
         "group_arm_down_left",
-        (-0.21333333333333335, 0.056296296296296296, -0.09899102105034722),
+        (-0.2325925925925926, 0.2916666666666667, -0.10430113615813079),
     ),
     (
         "con_shieldgen_m_083",
         "medium shield hittable standard",
         "group_arm_down_left",
-        (-0.2074074074074074, 0.056296296296296296, -0.09510111490885417),
+        (-0.2337037037037037, 0.28574074074074074, -0.1045317699291088),
     ),
     (
         "con_turret_103",
@@ -1935,8 +1956,133 @@ ZONE_MOUNTS = (
         "group_loop_down_left",
         (-0.16296296296296298, -0.4948148148148148, 0.041011177345558446),
     ),
+    # Two medium shields beside each of the original large turrets.
+    (
+        "con_shieldgen_m_148",
+        "medium shield hittable standard",
+        "group_front_up_mid",
+        (0.005925925925925926, 0.3592592592592593, -0.0031941731770833335),
+    ),
+    (
+        "con_shieldgen_m_149",
+        "medium shield hittable standard",
+        "group_front_up_mid",
+        (-0.005925925925925926, 0.3592592592592593, -0.0031941731770833335),
+    ),
+    (
+        "con_shieldgen_m_150",
+        "medium shield hittable standard",
+        "group_front_down_mid",
+        (0.012592592592592593, 0.05037037037037037, -0.11401095920138889),
+    ),
+    (
+        "con_shieldgen_m_151",
+        "medium shield hittable standard",
+        "group_front_down_mid",
+        (-0.012592592592592593, 0.05037037037037037, -0.11401095920138889),
+    ),
+    (
+        "con_shieldgen_m_152",
+        "medium shield hittable standard",
+        "group_mid_up_mid",
+        (0.01925925925925926, 0.1259259259259259, 0.1131958912037037),
+    ),
+    (
+        "con_shieldgen_m_153",
+        "medium shield hittable standard",
+        "group_mid_up_mid",
+        (-0.01925925925925926, 0.1259259259259259, 0.1131958912037037),
+    ),
+    (
+        "con_shieldgen_m_154",
+        "medium shield hittable standard",
+        "group_mid_down_mid",
+        (0.01925925925925926, 0.11703703703703704, -0.06802571614583333),
+    ),
+    (
+        "con_shieldgen_m_155",
+        "medium shield hittable standard",
+        "group_mid_down_mid",
+        (-0.01925925925925926, 0.11703703703703704, -0.06802571614583333),
+    ),
+    (
+        "con_shieldgen_m_156",
+        "medium shield hittable standard",
+        "group_mid_up_mid",
+        (0.01925925925925926, -0.1451851851851852, 0.05681839554398148),
+    ),
+    (
+        "con_shieldgen_m_157",
+        "medium shield hittable standard",
+        "group_mid_up_mid",
+        (-0.01925925925925926, -0.1451851851851852, 0.05681839554398148),
+    ),
+    (
+        "con_shieldgen_m_158",
+        "medium shield hittable standard",
+        "group_mid_down_mid",
+        (0.01037037037037037, -0.2037037037037037, -0.015851508246527778),
+    ),
+    (
+        "con_shieldgen_m_159",
+        "medium shield hittable standard",
+        "group_mid_down_mid",
+        (-0.01037037037037037, -0.2037037037037037, -0.015851508246527778),
+    ),
+    # Two more medium turrets under each lower arm, with their shields.
+    (
+        "con_turret_155",
+        "turret medium standard missile hittable combat",
+        "group_arm_down_right",
+        (0.23925925925925925, 0.22685185185185186, -0.10722331859447339),
+    ),
+    (
+        "con_turret_156",
+        "turret medium standard missile hittable combat",
+        "group_arm_down_left",
+        (-0.23925925925925925, 0.22685185185185186, -0.10722331859447339),
+    ),
+    (
+        "con_shieldgen_m_160",
+        "medium shield hittable standard",
+        "group_arm_down_right",
+        (0.23925925925925925, 0.22092592592592591, -0.1075438548900463),
+    ),
+    (
+        "con_shieldgen_m_161",
+        "medium shield hittable standard",
+        "group_arm_down_left",
+        (-0.23925925925925925, 0.22092592592592591, -0.1075438548900463),
+    ),
+    (
+        "con_turret_157",
+        "turret medium standard missile hittable combat",
+        "group_arm_down_right",
+        (0.2414814814814815, 0.16203703703703703, -0.112238690411603),
+    ),
+    (
+        "con_turret_158",
+        "turret medium standard missile hittable combat",
+        "group_arm_down_left",
+        (-0.2414814814814815, 0.16203703703703703, -0.112238690411603),
+    ),
+    (
+        "con_shieldgen_m_162",
+        "medium shield hittable standard",
+        "group_arm_down_right",
+        (0.24185185185185185, 0.15611111111111112, -0.11411685519748264),
+    ),
+    (
+        "con_shieldgen_m_163",
+        "medium shield hittable standard",
+        "group_arm_down_left",
+        (-0.24185185185185185, 0.15611111111111112, -0.11411685519748264),
+    ),
 )
 LAYERED = {mount[0] for mount in ZONE_MOUNTS}
+# XL shields stay ungrouped like on the base-game XL ships, so the ship's shield page lists them;
+# their group in MOUNTS only says which side of the hull they sit on.
+UNGROUPED = {f"con_shieldgen_xl_{i:02d}" for i in range(1, 5)}
 MOUNTS = MOUNTS + ZONE_MOUNTS
 
 
@@ -2139,7 +2285,7 @@ def round_dorsal(mesh_object):
 def smooth_crests(mesh_object, surface):
     # Fair the hull along the strip crests so the strips lie on a clean curve, as on the series
     # model. Falloff keeps the change local; both halves move alike, so symmetry holds.
-    points = [p for _, _, first, last, *_ in STRIPS for p in crest_line(surface, first, last)]
+    points = [p for first, last in CREST_SPANS for p in crest_line(surface, first, last)]
     points += [Vector((-p.x, p.y, p.z)) for p in points]
     tree = KDTree(len(points))
     for index, point in enumerate(points):
@@ -2174,14 +2320,23 @@ def window(values, index):
     return sum(chunk, Vector()) / len(chunk)
 
 
-def inner_face(surface, crest, drop):
-    # The light channel runs on the inner face of the arc: cast outward from inside the ship,
-    # a little below the crest, and keep hits whose face looks back toward the centre plane.
-    origin = Vector((crest.x - 150.0, crest.y, crest.z - drop))
-    hit, normal, _, _ = surface.tree.ray_cast(origin, Vector((1, 0, 0)), 200.0)
-    if hit is None or normal.x > -0.4:
-        return None
-    return hit, normal
+def arc_top_stations(surface):
+    from andromeda_arms import ARMS, catmull, frame, resample, station_value
+
+    arm = ARMS[0]
+    path = resample(catmull([Vector(p) for p in arm["control"]], 12), arm["samples"])
+    first, last, inset, _ = ARC_STRIP
+    stations = []
+    for i in range(1, len(path) - 1):
+        fraction = i / (arm["samples"] - 1)
+        if not first <= fraction <= last:
+            continue
+        _, width, up = frame(path[i + 1] - path[i - 1])
+        reach = station_value(arm["stations"], fraction, 1) * inset
+        hit, normal, _, _ = surface.tree.ray_cast(path[i] - width * reach + up * 200.0, -up, 400.0)
+        if hit is not None and normal.dot(up) > 0.3:
+            stations.append((hit, normal))
+    return stations
 
 
 def emit_strip(bm, surface, marker, stations, lit, gap, width, mirrors):
@@ -2194,6 +2349,27 @@ def emit_strip(bm, surface, marker, stations, lit, gap, width, mirrors):
         for k in range(steps):
             samples.append((a.lerp(b, k / steps), na.lerp(nb, k / steps).normalized()))
     samples.append((points[-1], normals[-1]))
+    if isinstance(width, tuple):
+        # Tapered strip: the first width at the lowest y of the run, the second at the highest.
+        low, high = min(p.y for p in points), max(p.y for p in points)
+
+        def width_at(point):
+            t = (point.y - low) / max(1e-6, high - low)
+            return width[0] + (width[1] - width[0]) * t
+
+    elif callable(width):
+        # A width profile over the run, from 0 at the first station to 1 at the last.
+        ends = points[0], points[-1]
+
+        def width_at(point):
+            span = ends[1] - ends[0]
+            return width((point - ends[0]).dot(span) / max(1e-6, span.length_squared))
+
+    else:
+
+        def width_at(point):
+            return width
+
     frames = []
     previous = None
     for i, (point, normal) in enumerate(samples):
@@ -2204,7 +2380,7 @@ def emit_strip(bm, surface, marker, stations, lit, gap, width, mirrors):
         if None is not previous and across.dot(previous) < 0:
             across = -across
         previous = across
-        frames.append((point, normal, across * (width * 0.5)))
+        frames.append((point, normal, across * (width_at(point) * 0.5)))
     for mirror in mirrors:
         mirrored = Vector((mirror, 1.0, 1.0))
         rows = []
@@ -2239,18 +2415,29 @@ def add_strips(mesh_object, surface):
     bm = bmesh.new()
     bm.from_mesh(mesh_object.data)
     marker = bm.faces.layers.int.get("livery") or bm.faces.layers.int.new("livery")
-    for lit, gap, first, last, low, high, drop, width in STRIPS:
-        crest = crest_line(surface, first, last)
-        stations = [
-            found
-            for found in (inner_face(surface, p, drop) for p in crest if low <= p.y <= high)
-            if found is not None
-        ]
+    stations = arc_top_stations(surface)
+    if 3 <= len(stations):
+        emit_strip(bm, surface, marker, stations, 1, 3, ARC_STRIP[3], (1.0, -1.0))
+    for start, end, widest, shape, facing in CYAN_PATCHES:
+        start, end, facing = Vector(start), Vector(end), Vector(facing).normalized()
+        count = max(3, round((end - start).length / PATCH_STEP))
+        stations = []
+        for k in range(count + 1):
+            point = start.lerp(end, k / count)
+            hit, normal, _, _ = surface.tree.ray_cast(
+                point + facing * PATCH_REACH, -facing, 2.0 * PATCH_REACH
+            )
+            if hit is not None and normal.dot(facing) > 0.2:
+                stations.append((hit, normal))
+
+        def outline(t, widest=widest, shape=shape):
+            return max(2.0, widest * max(0.0, 1.0 - (2.0 * t - 1.0) ** 2) ** shape)
+
         if 3 <= len(stations):
-            emit_strip(bm, surface, marker, stations, lit, gap, width, (1.0, -1.0))
+            emit_strip(bm, surface, marker, stations, 2, 4, outline, (1.0, -1.0))
     station, half_span, sweep, width = BELLY_GRILLE
     stations = []
-    for index in range(int(-half_span), int(half_span) + 1, 2):
+    for index in range(0, int(half_span) + 1, 2):
         x = float(index)
         y = station - sweep * (x / half_span) ** 2
         hit, normal, _, _ = surface.tree.ray_cast(
@@ -2259,12 +2446,35 @@ def add_strips(mesh_object, surface):
         if hit is not None:
             stations.append((hit, normal))
     if 3 <= len(stations):
-        # Centred on the axis, the crescent is its own mirror image.
-        emit_strip(bm, surface, marker, stations, 2, 4, width, (1.0,))
+        # Built on the right half from the axis outward and mirrored, so the ribs match exactly.
+        emit_strip(bm, surface, marker, stations, 2, 4, width, (1.0, -1.0))
     bm.normal_update()
     bm.to_mesh(mesh_object.data)
     bm.free()
     mesh_object.data.update()
+
+
+def dark_faces(mesh):
+    from andromeda_arms import ARMS, catmull, resample
+
+    points = [
+        point
+        for arm in ARMS
+        for point in resample(catmull([Vector(p) for p in arm["control"]], 12), 4 * arm["samples"])
+    ]
+    arms = KDTree(len(points))
+    for index, point in enumerate(points):
+        arms.insert(point, index)
+    arms.balance()
+    dark = []
+    for polygon in mesh.polygons:
+        centre = polygon.center.copy()
+        centre.x = abs(centre.x)
+        upward = sum(mesh.vertices[v].normal.z for v in polygon.vertices) / len(polygon.vertices)
+        loop = centre.y < LOOP_REGION[0] and LOOP_REGION[1] < centre.x
+        wing = DARK_KEEL < centre.x and ARM_REACH <= arms.find(centre)[2]
+        dark.append(wing and not loop and upward < DARK_UPWARD)
+    return dark
 
 
 def prepare_channels(mesh_object):
@@ -2281,6 +2491,7 @@ def prepare_channels(mesh_object):
             mirrored = (abs(position.x), position.y, position.z)
             uv.data[index].uv = tuple(mirrored[axis] / HULL_TEXTURE_METRES for axis in axes)
     shades = hull_shades(mesh)
+    dark = dark_faces(mesh)
     marker = mesh.attributes.get("pad")
     pads = [entry.value for entry in marker.data] if None is not marker else None
     if None is not marker:
@@ -2303,19 +2514,24 @@ def prepare_channels(mesh_object):
             continue
         for polygon in mesh.polygons:
             tint = PAD_TINT if pads is not None and pads[polygon.index] else 1.0
-            base = STRIP_COLOURS.get(paints[polygon.index] if paints else 0, HULL_BASE_COLOUR)
+            paint = paints[polygon.index] if paints else 0
+            gunmetal = not paint and dark[polygon.index]
+            base = STRIP_COLOURS.get(paint, DARK_BASE_COLOUR if gunmetal else HULL_BASE_COLOUR)
             for index in polygon.loop_indices:
-                shade = shades[mesh.loops[index].vertex_index] * tint
-                colour.data[index].color = (*(c * shade for c in base), 1.0)
+                shade = shades[mesh.loops[index].vertex_index]
+                if gunmetal:
+                    shade **= DARK_OCCLUSION_POWER
+                colour.data[index].color = (*(c * shade * tint for c in base), 1.0)
     mesh_object.data.materials.clear()
-    for name in (MATERIAL_NAME, *LIGHT_MATERIALS.values()):
+    for name in (MATERIAL_NAME, *LIGHT_MATERIALS.values(), DARK_MATERIAL):
         mesh_object.data.materials.append(
             bpy.data.materials.get(name) or bpy.data.materials.new(name)
         )
     slots = {livery_id: 1 + index for index, livery_id in enumerate(LIGHT_MATERIALS)}
     for polygon in mesh_object.data.polygons:
         polygon.use_smooth = True
-        polygon.material_index = slots.get(paints[polygon.index] if paints else 0, 0)
+        paint = paints[polygon.index] if paints else 0
+        polygon.material_index = slots.get(paint, DARK_SLOT if dark[polygon.index] else 0)
 
 
 def apply_modifiers(mesh_object):
@@ -2345,17 +2561,39 @@ def correct_shading(mesh_object):
     raise ValueError(f"{mesh_object.name}: could not produce consistent shading normals")
 
 
+def without_strips(mesh, keep_strips):
+    # Decimation would merge strip vertices into the hull and spread the light material over
+    # large triangles, so strips are removed before it (or kept alone for re-adding).
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    doomed = [f for f in bm.faces if (0 < f.material_index < DARK_SLOT) != keep_strips]
+    bmesh.ops.delete(bm, geom=doomed, context="FACES")
+    bm.to_mesh(mesh)
+    bm.free()
+    mesh.update()
+
+
 def build_parts(source):
     made = []
-    for name, ratio in LOD_RATIO:
+    for index, (name, ratio) in enumerate(LOD_RATIO):
         mesh = source.data.copy()
         mesh_object = bpy.data.objects.new(name, mesh)
         bpy.context.scene.collection.objects.link(mesh_object)
         if 1.0 > ratio:
+            without_strips(mesh_object.data, False)
             modifier = mesh_object.modifiers.new(name="decimate", type="DECIMATE")
             modifier.ratio = ratio
             apply_modifiers(mesh_object)
             symmetrize(mesh_object)
+            if index <= STRIP_LODS:
+                strips = bpy.data.objects.new(name + ".strips", source.data.copy())
+                bpy.context.scene.collection.objects.link(strips)
+                without_strips(strips.data, True)
+                bpy.ops.object.select_all(action="DESELECT")
+                mesh_object.select_set(True)
+                strips.select_set(True)
+                bpy.context.view_layer.objects.active = mesh_object
+                bpy.ops.object.join()
         correct_shading(mesh_object)
         mesh_object.data.name = name
         made.append(mesh_object)
@@ -2553,7 +2791,7 @@ def add_pad(bm, surface, point, frame, half_extents, top=None, flat=None):
         )
     if flat:
         # The hull already offers a level seat under the socket; leave the original surface.
-        return (max(inner[-1], 0.0) if None is top else top), True
+        return (-MOUNT_SINK if None is top else top), True
     if None is top:
         seat = inner[int(PAD_SEAT * (len(inner) - 1))] if inner else 0.0
         top = max(seat, 0.0) + PAD_LIFT
@@ -2628,11 +2866,7 @@ def mount_frames(surface):
     frames = []
     for name, tags, group, _ in MOUNTS:
         point, normal = found[name]
-        facing = (
-            longitudinal_facing(normal)
-            if "shield" in tags.split()
-            else normal.to_track_quat("Z", "Y").to_euler()
-        )
+        facing = longitudinal_facing(normal)
         frames.append((name, tags, group, point, facing))
     return frames
 
@@ -2672,7 +2906,7 @@ def add_pads(mesh_object, surface, frames):
 
 def place_mounts(placed):
     for name, tags, group, point, facing in placed:
-        add_connection(name, tags, point, 1.0, facing, group)
+        add_connection(name, tags, point, 1.0, facing, None if name in UNGROUPED else group)
 
 
 def arm_tips(vertex):
@@ -2762,7 +2996,6 @@ def main():
     clear_scene()
     source = import_source()
     repair_winding(source)
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
     from andromeda_turrets import TAGS, remove_from_hull
 
     turret_stations = remove_from_hull(source)
@@ -2773,6 +3006,11 @@ def main():
     print(f"andromeda: rounded {rounded} dorsal hull vertices")
     smoothed = smooth_crests(source, HullSurface(source.data))
     print(f"andromeda: faired {smoothed} hull vertices under the light strips")
+    from andromeda_arms import rebuild_arms
+
+    rebuilt = rebuild_arms(source)
+    symmetrize(source)
+    print(f"andromeda: rebuilt the arms {rebuilt}")
     surface = HullSurface(source.data)
     vertex = [v.co.copy() for v in source.data.vertices]
     placed = add_pads(source, surface, mount_frames(surface))

@@ -99,6 +99,8 @@ def validate(root=ROOT, game=None):
                 & {"medium", "large", "extralarge", "small"}
                 and set(connection.get("tags", "").split()) & {"turret", "shield", "engine"}
                 and not connection.get("group")
+                # Base-game XL ships leave their XL shields ungrouped; the shield page lists them.
+                and not {"extralarge", "shield"} <= set(connection.get("tags", "").split())
             ):
                 errors.append(f"{name}: equipment connection has no group")
         if component.get("class") == "ship_xl":

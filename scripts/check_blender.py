@@ -48,8 +48,8 @@ assert set(mesh.color_attributes.keys()) == {"col", "idcode", "paintmodmask"}
 assert all(entry.color[0] == 0 for entry in mesh.color_attributes["paintmodmask"].data)
 assert all(0.1 < entry.color[0] < 0.8 for entry in mesh.color_attributes["col"].data)
 assert mesh.uv_layers.active.name == "uv1"
-assert len(IMPORTER["MOUNTS"]) == 305
-assert len({mount[0] for mount in IMPORTER["MOUNTS"]}) == 305
+assert len(IMPORTER["MOUNTS"]) == 325
+assert len({mount[0] for mount in IMPORTER["MOUNTS"]}) == 325
 print("Blender geometry, ray intersections, orientation and vertex channel checks passed")
 
 if "--" in sys.argv:
@@ -67,7 +67,7 @@ if "--" in sys.argv:
     for name, tags, group, _ in IMPORTER["MOUNTS"]:
         obj = bpy.data.objects.get(name)
         assert obj is not None, name
-        assert obj.get("group_name") == group, name
+        assert obj.get("group_name") == (None if name in IMPORTER["UNGROUPED"] else group), name
         assert set(obj.get("extratags", "").split()) == set(tags.split()), name
         if "shield" in tags.split():
             rotation = obj.rotation_euler.to_matrix()

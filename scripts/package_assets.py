@@ -36,6 +36,7 @@ def main():
         "con_engine_02": "group_engine_right",
         "con_weapon_xl_01": None,
         "con_weapon_xl_02": None,
+        **{f"con_shieldgen_xl_{i:02d}": None for i in range(1, 5)},
     }
     corrected_tags = {
         "con_engine_01": frozenset("engine extralarge andromeda".split()),
@@ -50,7 +51,7 @@ def main():
     additions = new_connections.keys() - old_connections.keys()
     expected_tags = {
         f"con_shieldgen_m_{i:03d}": frozenset(("medium", "shield", "hittable", "standard"))
-        for i in range(1, 148)
+        for i in range(1, 164)
     }
     expected_tags.update(
         (
@@ -66,7 +67,7 @@ def main():
     for name in additions:
         tags = new_connections[name][0]
         if name.startswith("con_turret_") and name[len("con_turret_") :].isdigit():
-            if not 37 <= int(name[len("con_turret_") :]) <= 154 or tags not in standard_turrets:
+            if not 37 <= int(name[len("con_turret_") :]) <= 158 or tags not in standard_turrets:
                 raise ValueError(f"unexpected new equipment connection: {name}")
         elif expected_tags.get(name) != tags:
             raise ValueError(f"unexpected new equipment connection: {name}")

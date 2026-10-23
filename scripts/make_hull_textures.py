@@ -2,7 +2,8 @@
 
 Run with Blender 4.2 for numpy: blender -b --python scripts/make_hull_textures.py -- <output dir> [<source dir>]
 With a source directory, its hull_panels_albedo.png and hull_panels_height.png (2048 px, tileable) replace the
-procedural plates. Writes PNG previews and gzipped DXT5 DDS files with full mip chains.
+procedural plates. Also writes the dark gunmetal albedo, the same panels crossed by blue circuit tracery.
+Writes PNG previews and gzipped DXT5 DDS files with full mip chains.
 """
 
 import gzip
@@ -23,6 +24,14 @@ ALBEDO = 0.86
 NORMAL_STRENGTH = 6.0
 SOURCE_NORMAL_STRENGTH = 2.0
 SOURCE_HEIGHT_BLUR = 1.5
+# DARK_PANEL dims the plates so the traces read lighter than them, as in the series stills.
+TRACE_GRID = 256
+TRACE_COUNT = 4
+TRACE_STEPS = (3, 7)
+TRACE_WIDTH = 48.0
+TRACE_PAD = 80.0
+TRACE_COLOUR = (0.3, 0.42, 0.68)
+DARK_PANEL = 0.55
 
 rng = np.random.default_rng(SEED)
 
@@ -149,6 +158,49 @@ def maps(albedo, height, smooth, metal, strength=NORMAL_STRENGTH):
     }
 
 
+def tracery():
+    # Drawn with wrap-around so the tile stays seamless.
+    cover = np.zeros((SIZE, SIZE), np.float32)
+    turns = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
+
+    def stamp(ax, ay, bx, by, width):
+        lo_x, hi_x = int(min(ax, bx) - width - 2), int(max(ax, bx) + width + 2)
+        lo_y, hi_y = int(min(ay, by) - width - 2), int(max(ay, by) + width + 2)
+        cols = np.arange(lo_x, hi_x + 1) % SIZE
+        rows = np.arange(lo_y, hi_y + 1) % SIZE
+        px, py = np.meshgrid(np.arange(lo_x, hi_x + 1), np.arange(lo_y, hi_y + 1))
+        dx, dy = bx - ax, by - ay
+        t = np.clip(((px - ax) * dx + (py - ay) * dy) / max(dx * dx + dy * dy, 1e-6), 0, 1)
+        d = np.hypot(px - ax - t * dx, py - ay - t * dy)
+        value = np.clip(width - d + 0.5, 0.0, 1.0)
+        block = cover[np.ix_(rows, cols)]
+        cover[np.ix_(rows, cols)] = np.maximum(block, value)
+
+    for _ in range(TRACE_COUNT):
+        x = float(rng.integers(0, SIZE // TRACE_GRID) * TRACE_GRID)
+        y = float(rng.integers(0, SIZE // TRACE_GRID) * TRACE_GRID)
+        heading = int(rng.integers(0, 4)) * 2
+        stamp(x, y, x, y, TRACE_PAD)
+        for _ in range(int(rng.integers(*TRACE_STEPS))):
+            if rng.random() < 0.35:
+                heading = (heading + (1 if rng.random() < 0.5 else -1)) % 8
+            dx, dy = turns[heading]
+            length = TRACE_GRID * int(rng.integers(1, 4))
+            nx, ny = x + dx * length, y + dy * length
+            stamp(x, y, nx, ny, TRACE_WIDTH)
+            x, y = nx, ny
+        stamp(x, y, x, y, TRACE_PAD)
+        stamp(x, y, x, y, TRACE_PAD * 0.55)
+    return cover
+
+
+def dark_maps(albedo):
+    # Red carries the glow too until the engine's glow channel is confirmed.
+    cover = tracery()[..., None]
+    grey = np.repeat(np.clip(albedo, 0, 1)[..., None], 3, -1) * DARK_PANEL
+    return grey * (1.0 - cover) + np.array(TRACE_COLOUR) * cover, np.array(TRACE_COLOUR) * cover
+
+
 def save_png(path, rgb):
     image = bpy.data.images.new(path.stem, SIZE, SIZE, alpha=True, float_buffer=False)
     image.colorspace_settings.name = "Non-Color"
@@ -183,8 +235,11 @@ def save_dds(png, target):
 arguments = sys.argv[sys.argv.index("--") + 1 :]
 output = Path(arguments[0])
 output.mkdir(parents=True, exist_ok=True)
-for name, data in (from_source(Path(arguments[1])) if 1 < len(arguments) else build()).items():
-    png = output / f"andromeda_panels_{name}.png"
+panels = from_source(Path(arguments[1])) if 1 < len(arguments) else build()
+panels["dark_diff"], panels["dark_glow"] = dark_maps(panels["diff"][..., 0])
+for name, data in panels.items():
+    stem = f"andromeda_{name}" if name.startswith("dark") else f"andromeda_panels_{name}"
+    png = output / f"{stem}.png"
     save_png(png, data)
-    save_dds(png, output / f"andromeda_panels_{name}")
+    save_dds(png, output / stem)
 print(f"Wrote {SIZE} px tileable hull maps to {output}")
