@@ -7,6 +7,8 @@ import numpy
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
+from andromeda_pieces import LAYER, tag
+
 RING_POINTS = 72
 TRACE_RAYS = 72
 TRACE_REACH = 90.0
@@ -19,12 +21,24 @@ CUT_MARGIN = 10.0
 ISLAND_MARGIN = 60.0
 ISLAND_FACES = 400
 # The pod starts POD_SINK inside the arms and rises to POD_LIFT outside them, so no lip shows.
-POD_BLEND = 2.0
+POD_BLEND = 3.0
 POD_SINK = 3.0
-POD_EMERGE = 0.2
+POD_EMERGE = 0.35
 POD_LIFT = 1.0
 POD_BULGE = 5.0
 POD_MARCH = 3.0
+# The lower member of each aft loop swells into a nacelle that carries the cyan grille: traced from
+# the seed in steps toward the loop corner and toward the hull, its own section scaled up to
+# NACELLE_SCALE along the middle and tucked inside the member at both ends.
+NACELLE = {
+    "seed": (366.0, -774.0, -75.0),
+    "toward_hull": (-0.66, 0.71, -0.23),
+    "steps": (14, 20),
+    "step": 10.0,
+    "scale": 1.7,
+    "tuck": 0.92,
+    "rise": 0.3,
+}
 ARMS = (
     {
         "name": "arc",
@@ -441,9 +455,56 @@ def build_pod(bm, arc, lower):
     return made
 
 
+def nacelle_rings(tree):
+    def walk(tangent, count):
+        point, line = Vector(NACELLE["seed"]), []
+        for _ in range(count):
+            centre = recentre(tree, point, tangent)
+            if centre is None:
+                break
+            line.append(centre)
+            point = centre + tangent.normalized() * NACELLE["step"]
+        return line
+
+    toward = Vector(NACELLE["toward_hull"])
+    aft, fore = (walk(t, n) for t, n in zip((-toward, toward), NACELLE["steps"]))
+    line = list(reversed(aft)) + fore[1:]
+    rings = []
+    for i, point in enumerate(line):
+        _, width, up = frame(line[min(i + 1, len(line) - 1)] - line[max(i - 1, 0)])
+        q = min(i, len(line) - 1 - i) / (len(line) - 1)
+        rise = min(1.0, q / NACELLE["rise"])
+        scale = NACELLE["tuck"] + (NACELLE["scale"] - NACELLE["tuck"]) * rise * rise * (
+            3 - 2 * rise
+        )
+        outline = angular([h for h in section(tree, point, width, up) if h], RING_POINTS)
+        rings.append([point + (width * u + up * v) * scale for u, v in outline])
+    return rings
+
+
+def build_nacelle(bm, tree):
+    rows = [[bm.verts.new(p) for p in ring] for ring in nacelle_rings(tree)]
+    made = []
+    for a, b in zip(rows, rows[1:]):
+        for k in range(RING_POINTS):
+            made.append(
+                bm.faces.new((a[k], a[(k + 1) % RING_POINTS], b[(k + 1) % RING_POINTS], b[k]))
+            )
+    middle = len(rows) // 2
+    centre = sum((v.co for v in rows[middle]), Vector()) / RING_POINTS
+    probe = made[middle * RING_POINTS]
+    probe.normal_update()
+    if probe.normal.dot(probe.calc_center_median() - centre) < 0:
+        for face in made:
+            face.normal_flip()
+    return made
+
+
 def rebuild_arms(mesh_object):
     bm = bmesh.new()
     bm.from_mesh(mesh_object.data)
+    # A layer added later would invalidate the faces already made.
+    bm.faces.layers.int.get(LAYER) or bm.faces.layers.int.new(LAYER)
     original = BVHTree.FromBMesh(bm)
     traces = {arm["name"]: trace(original, arm) for arm in ARMS}
     tip = traces["arc"][-1][0]
@@ -503,10 +564,14 @@ def rebuild_arms(mesh_object):
         if probe.normal.dot(probe.calc_center_median() - centre) < 0:
             for face in made:
                 face.normal_flip()
+        tag(bm, made, arm["name"])
         fresh.update(e for f in made for e in f.edges)
     pod = build_pod(bm, *(sweep(arm) for arm in ARMS))
-    report["pod"] = len(pod)
-    fresh.update(e for f in pod for e in f.edges)
+    nacelle = build_nacelle(bm, original)
+    tag(bm, pod, "pod")
+    tag(bm, nacelle, "nacelle")
+    report["pod"], report["nacelle"] = len(pod), len(nacelle)
+    fresh.update(e for f in pod + nacelle for e in f.edges)
     bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if 4 < len(f.verts)])
     bmesh.ops.dissolve_degenerate(bm, dist=0.01, edges=[e for e in fresh if e.is_valid])
     bmesh.ops.delete(

@@ -21,9 +21,6 @@ SHIP_LENGTH = 2700.0
 MATERIAL_NAME = "andromeda.andromeda_hull"
 # Lit strip ribs get their own glowing materials; dark gaps stay on the hull material.
 LIGHT_MATERIALS = {1: "andromeda.andromeda_lights_red", 2: "andromeda.andromeda_lights_cyan"}
-# After the lights, so strip faces stay the slots between hull and DARK_SLOT.
-DARK_MATERIAL = "andromeda.andromeda_hull_dark"
-DARK_SLOT = 1 + len(LIGHT_MATERIALS)
 LOD_RATIO = (
     ("part_main", 1.0),
     ("part_main.LOD1", 0.55),
@@ -38,13 +35,6 @@ HULL_CORE_FRACTION = 0.12
 MAIN_WEAPON_TAGS = "combat extralarge andromeda weapon"
 ENGINE_TAGS = "engine extralarge andromeda"
 HULL_BASE_COLOUR = (0.66, 0.67, 0.72)
-DARK_BASE_COLOUR = (0.42, 0.42, 0.46)
-# Recesses on the dark panels fall toward black, as in the series stills.
-DARK_OCCLUSION_POWER = 1.8
-ARM_REACH = 100.0
-LOOP_REGION = (-350.0, 230.0)
-DARK_KEEL = 130.0
-DARK_UPWARD = 0.35
 HULL_TEXTURE_METRES = 120.0
 PAD_TINT = 0.6
 # Livery after the series: ribbed light channels on the inner faces of the great arcs (red) and of
@@ -57,13 +47,10 @@ STRIP_COLOURS = {
 }
 # Crest spans of the arcs and the aft loops, faired before the hull is used.
 CREST_SPANS = ((1250.0, 0.0), (-700.0, -1320.0))
-# Start and end as fractions of the arc path, inset from the centreline as a share of its width, widths.
-ARC_STRIP = (0.07, 0.52, 0.25, (70.0, 2.0))
+# Start and end as fractions of the arc path, gap left at the arc's inner edge, widths.
+ARC_STRIP = (0.07, 0.52, 3.0, (70.0, 2.0))
 # From, to, widest, shape exponent (0.5 an ellipse, near 0 a rounded box) and the direction the face looks.
-CYAN_PATCHES = (
-    ((429.0, -791.0, -81.0), (351.0, -711.0, -85.0), 30.0, 0.15, (0.6, 0.6, -0.1)),
-    ((640.0, -760.0, -105.0), (650.0, -630.0, -130.0), 40.0, 0.5, (0.65, 0.0, 0.6)),
-)
+CYAN_PATCHES = (((436.0, -831.0, -66.0), (296.0, -683.0, -111.0), 34.0, 0.15, (0.71, 0.66, -0.1)),)
 PATCH_STEP = 4.0
 PATCH_REACH = 80.0
 # The cyan crescent grille under the central hull: station, half-span, sweep at the tips and width.
@@ -2325,14 +2312,15 @@ def arc_top_stations(surface):
 
     arm = ARMS[0]
     path = resample(catmull([Vector(p) for p in arm["control"]], 12), arm["samples"])
-    first, last, inset, _ = ARC_STRIP
+    first, last, margin, (wide, narrow) = ARC_STRIP
     stations = []
     for i in range(1, len(path) - 1):
         fraction = i / (arm["samples"] - 1)
         if not first <= fraction <= last:
             continue
         _, width, up = frame(path[i + 1] - path[i - 1])
-        reach = station_value(arm["stations"], fraction, 1) * inset
+        band = wide + (narrow - wide) * (fraction - first) / (last - first)
+        reach = station_value(arm["stations"], fraction, 1) / 2 - band / 2 - margin
         hit, normal, _, _ = surface.tree.ray_cast(path[i] - width * reach + up * 200.0, -up, 400.0)
         if hit is not None and normal.dot(up) > 0.3:
             stations.append((hit, normal))
@@ -2454,29 +2442,6 @@ def add_strips(mesh_object, surface):
     mesh_object.data.update()
 
 
-def dark_faces(mesh):
-    from andromeda_arms import ARMS, catmull, resample
-
-    points = [
-        point
-        for arm in ARMS
-        for point in resample(catmull([Vector(p) for p in arm["control"]], 12), 4 * arm["samples"])
-    ]
-    arms = KDTree(len(points))
-    for index, point in enumerate(points):
-        arms.insert(point, index)
-    arms.balance()
-    dark = []
-    for polygon in mesh.polygons:
-        centre = polygon.center.copy()
-        centre.x = abs(centre.x)
-        upward = sum(mesh.vertices[v].normal.z for v in polygon.vertices) / len(polygon.vertices)
-        loop = centre.y < LOOP_REGION[0] and LOOP_REGION[1] < centre.x
-        wing = DARK_KEEL < centre.x and ARM_REACH <= arms.find(centre)[2]
-        dark.append(wing and not loop and upward < DARK_UPWARD)
-    return dark
-
-
 def prepare_channels(mesh_object):
     mesh = mesh_object.data
     for layer in list(mesh.uv_layers):
@@ -2491,7 +2456,6 @@ def prepare_channels(mesh_object):
             mirrored = (abs(position.x), position.y, position.z)
             uv.data[index].uv = tuple(mirrored[axis] / HULL_TEXTURE_METRES for axis in axes)
     shades = hull_shades(mesh)
-    dark = dark_faces(mesh)
     marker = mesh.attributes.get("pad")
     pads = [entry.value for entry in marker.data] if None is not marker else None
     if None is not marker:
@@ -2514,24 +2478,19 @@ def prepare_channels(mesh_object):
             continue
         for polygon in mesh.polygons:
             tint = PAD_TINT if pads is not None and pads[polygon.index] else 1.0
-            paint = paints[polygon.index] if paints else 0
-            gunmetal = not paint and dark[polygon.index]
-            base = STRIP_COLOURS.get(paint, DARK_BASE_COLOUR if gunmetal else HULL_BASE_COLOUR)
+            base = STRIP_COLOURS.get(paints[polygon.index] if paints else 0, HULL_BASE_COLOUR)
             for index in polygon.loop_indices:
-                shade = shades[mesh.loops[index].vertex_index]
-                if gunmetal:
-                    shade **= DARK_OCCLUSION_POWER
-                colour.data[index].color = (*(c * shade * tint for c in base), 1.0)
+                shade = shades[mesh.loops[index].vertex_index] * tint
+                colour.data[index].color = (*(c * shade for c in base), 1.0)
     mesh_object.data.materials.clear()
-    for name in (MATERIAL_NAME, *LIGHT_MATERIALS.values(), DARK_MATERIAL):
+    for name in (MATERIAL_NAME, *LIGHT_MATERIALS.values()):
         mesh_object.data.materials.append(
             bpy.data.materials.get(name) or bpy.data.materials.new(name)
         )
     slots = {livery_id: 1 + index for index, livery_id in enumerate(LIGHT_MATERIALS)}
     for polygon in mesh_object.data.polygons:
         polygon.use_smooth = True
-        paint = paints[polygon.index] if paints else 0
-        polygon.material_index = slots.get(paint, DARK_SLOT if dark[polygon.index] else 0)
+        polygon.material_index = slots.get(paints[polygon.index] if paints else 0, 0)
 
 
 def apply_modifiers(mesh_object):
@@ -2566,7 +2525,7 @@ def without_strips(mesh, keep_strips):
     # large triangles, so strips are removed before it (or kept alone for re-adding).
     bm = bmesh.new()
     bm.from_mesh(mesh)
-    doomed = [f for f in bm.faces if (0 < f.material_index < DARK_SLOT) != keep_strips]
+    doomed = [f for f in bm.faces if (0 < f.material_index) != keep_strips]
     bmesh.ops.delete(bm, geom=doomed, context="FACES")
     bm.to_mesh(mesh)
     bm.free()
@@ -3015,8 +2974,15 @@ def main():
     vertex = [v.co.copy() for v in source.data.vertices]
     placed = add_pads(source, surface, mount_frames(surface))
     add_strips(source, surface)
+    from andromeda_pieces import drop_labels, label, write
+
+    label(source)
     prepare_channels(source)
     made = build_parts(source)
+    pieces = write(made[0], option.target.with_name(option.target.stem + "_pieces.blend"))
+    for item in bpy.context.scene.objects:
+        if item.type == "MESH":
+            drop_labels(item.data)
     bpy.data.objects.remove(source, do_unlink=True)
     points = json.loads(
         (SOURCE_DIRECTORY / f"{SOURCE_STEM}_points.json").read_text(encoding="utf-8")
@@ -3050,6 +3016,7 @@ def main():
     )
     for item in made:
         print(f"  {item.name}: {len(item.data.polygons)} faces")
+    print("andromeda: pieces " + ", ".join(f"{name} {count}" for name, count in pieces))
     if option.export:
         for item in bpy.context.scene.objects:
             if item.get("group_name"):

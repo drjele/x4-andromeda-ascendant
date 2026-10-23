@@ -99,6 +99,15 @@ if "--" in sys.argv:
         assert "mandatory" not in obj["extratags"].split(), name
     print("Saved scene geometry, longitudinal shields and equipment identities passed")
 
+    main_faces = len(bpy.data.objects["part_main"].data.polygons)
+    pieces = target.with_name(target.stem + "_pieces.blend")
+    with bpy.data.libraries.load(str(pieces)) as (available, into):
+        into.meshes = [name for name in available.meshes if name.startswith("piece_")]
+    piece_faces = sum(len(mesh.polygons) for mesh in into.meshes)
+    assert piece_faces == main_faces, (piece_faces, main_faces)
+    assert not any("piece" in o.data.attributes for o in bpy.data.objects if o.type == "MESH")
+    print(f"{len(into.meshes)} pieces partition part_main's {main_faces} faces")
+
     dae = ET.parse(target.with_name(target.stem + "_data.dae"))
     namespace = {"c": "http://www.collada.org/2005/11/COLLADASchema"}
     for geometry in dae.findall(".//c:geometry", namespace):
