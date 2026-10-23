@@ -1,0 +1,36 @@
+# Side links from the union surface: what lies inside the body or the arm is dropped, so the piece ends just
+# under their skin, then the triangles are collapsed to an even mesh; the left link mirrors the right one.
+import bpy, bmesh, json
+import numpy as np
+from mathutils import Matrix
+from mathutils.bvhtree import BVHTree
+D = "/home/adrian/projects/drjele/x4-andromeda-ascendant/.temp"
+P = json.load(open(f"{D}/links/l_params.json"))["mesh"]
+d = np.load(f"{D}/links/lsurf.npz"); V, Fc = d["v"], d["f"]
+bpy.ops.wm.open_mainfile(filepath=f"{D}/vtop/v_scene.blend")
+sc = bpy.data.scenes["seg"]
+for o in [o for o in sc.objects if o.name in ("link_r", "link_l")]: bpy.data.objects.remove(o)
+trees = []
+for n, cap in (("corp", 1e9), ("arm_r", P["cap"])):
+    b = bmesh.new(); b.from_mesh(sc.objects[n].data); trees.append((BVHTree.FromBMesh(b), cap))
+me = bpy.data.meshes.new("link_r"); me.from_pydata(V.tolist(), [], Fc.tolist())
+bm = bmesh.new(); bm.from_mesh(me)
+for _ in range(P["smooth"]): bmesh.ops.smooth_vert(bm, verts=[v for v in bm.verts if not v.is_boundary], factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+kill = []
+for v in bm.verts:
+    for T, cap in trees:
+        loc, nrm, _, dist = T.find_nearest(v.co)
+        # the arm is open at its roots, so its side test only counts close to its skin
+        if loc is not None and dist < cap and (v.co - loc).dot(nrm) < -P["depth"]: kill.append(v); break
+bmesh.ops.delete(bm, geom=kill, context="VERTS")
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+bm.to_mesh(me)
+ob = bpy.data.objects.new("link_r", me); sc.collection.objects.link(ob)
+# the marching-cubes slivers shade in bands; collapsing them to fewer, even triangles shades smoothly
+bpy.context.window.scene = sc; md = ob.modifiers.new("dec", "DECIMATE"); md.ratio = P["decimate"]
+with bpy.context.temp_override(object=ob, active_object=ob, selected_objects=[ob]): bpy.ops.object.modifier_apply(modifier="dec")
+for p in me.polygons: p.use_smooth = True
+ml = me.copy(); ml.name = "link_l"; ml.transform(Matrix.Scale(-1, 4, (1, 0, 0))); ml.flip_normals()
+sc.collection.objects.link(bpy.data.objects.new("link_l", ml))
+bpy.data.libraries.write(f"{D}/vtop/v_scene.blend", {sc}, fake_user=True)
+print("LINKS ok", len(me.polygons))

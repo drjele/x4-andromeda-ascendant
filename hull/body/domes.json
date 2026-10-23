@@ -10,12 +10,12 @@
  },
  "stern_window": {
   "y": 0,
-  "half_len": 24,
-  "half_wid": 46,
-  "height": 0.8,
-  "outline_n": 4.0,
-  "profile_n": 8.0,
+  "half_len": 46,
+  "half_wid": 62,
+  "height": 28,
+  "outline_n": 3.0,
+  "profile_n": 3.0,
   "behind": true,
-  "z": 64
+  "z": 62
  }
 }

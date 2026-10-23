@@ -31,7 +31,7 @@ r = np.clip((dist - (X2[1] - X2[0])) / P["rim"], 0, 1)
 from scipy.ndimage import binary_erosion
 r[m2 & ~binary_erosion(m2)] = 0.0   # the outermost cells close the plate exactly
 top2 = bt2 + (tp2 - bt2) * np.sqrt(1 - (1 - r) ** 2)
-np.savez("vplate.npz", xs=X2, ys=Y2, mask=m2, mid=(top2 + bt2) / 2, half=(top2 - bt2) / 2)
+np.savez("vplate.npz", xs=X2, ys=Y2, mask=m2, mid=(top2 + bt2) / 2, half=(top2 - bt2) / 2, dist=dist, top=tp2, under=bt2, rim=P["rim"])
 # the keel: flat in the middle (a deck for mounts), sloping evenly out to every edge of the plate
 K = json.load(open("vdeco.json"))["v_keel"]
 dk = gaussian_filter(distance_transform_edt(m2) * (X2[1] - X2[0]), 2.0) - K["inset"]
