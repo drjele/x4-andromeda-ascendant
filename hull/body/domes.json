@@ -1,0 +1,21 @@
+{
+ "_doc": "oval domes on the body top: centre y, half length, half width, height above the body, squareness of the outline and of the profile",
+ "dorsal_dome": {
+  "y": 20,
+  "half_len": 95,
+  "half_wid": 70,
+  "height": 8,
+  "outline_n": 2.2,
+  "profile_n": 3.0
+ },
+ "stern_window": {
+  "y": 0,
+  "half_len": 24,
+  "half_wid": 46,
+  "height": 0.8,
+  "outline_n": 4.0,
+  "profile_n": 8.0,
+  "behind": true,
+  "z": 64
+ }
+}

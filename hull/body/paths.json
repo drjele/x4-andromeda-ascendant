@@ -1,0 +1,250 @@
+{
+ "_doc": "parts that follow a path drawn on the hull: points in the view plane (below: x,y; behind: x,z; side: y,z), projected onto the hull from that side; half width and height profiles along the path; closed paths loop; mirrored unless centre",
+ "belly_leaves": {
+  "view": "below",
+  "points": [
+   [
+    46,
+    742
+   ],
+   [
+    41,
+    700
+   ],
+   [
+    35,
+    660
+   ],
+   [
+    32,
+    620
+   ],
+   [
+    28,
+    590
+   ],
+   [
+    25,
+    562
+   ]
+  ],
+  "half": [
+   1.5,
+   7,
+   11,
+   10,
+   6,
+   1.5
+  ],
+  "height": [
+   2,
+   5,
+   6,
+   7,
+   5,
+   2
+  ]
+ },
+ "stern_eyes": {
+  "view": "behind",
+  "circle": [
+   92,
+   62,
+   16
+  ],
+  "half": [
+   3.5
+  ],
+  "height": [
+   3
+  ],
+  "closed": true
+ },
+ "stern_eyes_inner": {
+  "view": "behind",
+  "circle": [
+   92,
+   62,
+   7
+  ],
+  "half": [
+   3
+  ],
+  "height": [
+   2.5
+  ],
+  "closed": true
+ },
+ "flank_blade": {
+  "view": "side",
+  "points": [
+   [
+    -470,
+    -30
+   ],
+   [
+    -380,
+    -36
+   ],
+   [
+    -260,
+    -44
+   ],
+   [
+    -150,
+    -46
+   ]
+  ],
+  "half": [
+   1,
+   2.5,
+   2,
+   0.8
+  ],
+  "height": [
+   1,
+   10,
+   9,
+   1
+  ]
+ },
+ "belly_grille": {
+  "view": "below",
+  "points": [
+   [
+    0,
+    214
+   ],
+   [
+    25,
+    212
+   ],
+   [
+    50,
+    206
+   ],
+   [
+    72,
+    196
+   ],
+   [
+    90,
+    184
+   ]
+  ],
+  "half": [
+   9,
+   9,
+   8.5,
+   8,
+   6
+  ],
+  "height": [
+   0.8,
+   0.8,
+   0.8,
+   0.8,
+   0.8
+  ],
+  "join_mirror": true
+ },
+ "belly_blades": {
+  "view": "below",
+  "points": [
+   [
+    17,
+    900
+   ],
+   [
+    30,
+    820
+   ],
+   [
+    43,
+    740
+   ],
+   [
+    51,
+    660
+   ],
+   [
+    59,
+    580
+   ],
+   [
+    67,
+    500
+   ],
+   [
+    75,
+    420
+   ],
+   [
+    81,
+    340
+   ],
+   [
+    88,
+    280
+   ],
+   [
+    105,
+    220
+   ],
+   [
+    130,
+    175
+   ],
+   [
+    140,
+    125
+   ],
+   [
+    142,
+    75
+   ],
+   [
+    141,
+    35
+   ],
+   [
+    138,
+    8
+   ]
+  ],
+  "half": [
+   1,
+   3,
+   4,
+   4,
+   4,
+   4.5,
+   5,
+   6,
+   9,
+   13,
+   17,
+   20,
+   26,
+   22,
+   3
+  ],
+  "height": [
+   1,
+   6,
+   8,
+   8,
+   7,
+   6,
+   6,
+   6,
+   7,
+   9,
+   10,
+   14,
+   24,
+   15,
+   2
+  ]
+ }
+}

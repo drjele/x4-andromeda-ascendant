@@ -1,0 +1,10 @@
+{
+ "_doc": "V ridges following the hull: belly path from y_front back to the stern, then up the stern face to z_end; half width and height of the V, front taper length",
+ "belly_spike": {
+  "y_front": 300,
+  "z_end": 30,
+  "half": 6,
+  "height": 7,
+  "taper": 120
+ }
+}

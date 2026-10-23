@@ -1,0 +1,27 @@
+{
+ "_doc": "thin blades on the stern face, from a start point to an end point given in the back view (x, z), standing out from the hull by height, half thickness at the root; mirrored unless centre",
+ "stern_fan_inner": {
+  "from": [
+   12,
+   30
+  ],
+  "to": [
+   28,
+   -8
+  ],
+  "height": 7,
+  "thick": 2.0
+ },
+ "stern_fan_outer": {
+  "from": [
+   30,
+   34
+  ],
+  "to": [
+   58,
+   4
+  ],
+  "height": 6,
+  "thick": 2.0
+ }
+}

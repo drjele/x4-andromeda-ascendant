@@ -1,0 +1,13 @@
+{
+ "_doc": "rounded-rectangle frames on the stern face: centre z, half width, half height, corner squareness, tube radius, how far the path stands off the hull",
+ "stern_frame": {
+  "z": 64,
+  "half_w": 58,
+  "half_h": 32,
+  "n": 4.0,
+  "tube": 6,
+  "offset": 2,
+  "band": 11,
+  "height": 5
+ }
+}
