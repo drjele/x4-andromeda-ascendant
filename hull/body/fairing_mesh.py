@@ -21,7 +21,16 @@ def surf(y, th):
 SINK = 3.0; NA, NY = 24, 120
 def fairing(bm, p, side):
     y0, y1 = p["y"]; ts = p["t"]
-    val = lambda key, t: float(np.interp(t, ts, p[key]))
+    # each profile: linear through the stations, then a wide gaussian along the part, so it flows
+    # as one curve (no plateaus or necks between stations); the ends keep their own values
+    TT = np.linspace(0, 1, 401); SIG = p.get("smooth", 0.05)
+    def _prof(v):
+        lin = np.interp(TT, ts, v); r = int(3 * SIG * 400); k = np.exp(-0.5 * (np.arange(-r, r + 1) / (SIG * 400)) ** 2); k /= k.sum()
+        sm = np.convolve(np.pad(lin, r, mode="reflect", reflect_type="odd"), k, "valid")
+        return sm
+    PROF = {k: _prof(p[k]) for k in ("angle", "height", "half", "half_m") if k in p}
+    def val(key, t):
+        return float(np.interp(t, TT, PROF[key]))
     rows = []
     for j in range(NY + 1):
         t = j / NY; y = y0 + (y1 - y0) * t

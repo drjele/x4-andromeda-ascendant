@@ -1,0 +1,84 @@
+{
+ "_doc": "V decorations: ridges seen from above on the plate top (points x,y on the right half, mirrored), half width and height profiles; the keel hangs under the plate",
+ "v_ridge_inner": {
+  "points": [
+   [
+    30,
+    52
+   ],
+   [
+    31,
+    90
+   ],
+   [
+    31,
+    130
+   ],
+   [
+    30,
+    170
+   ],
+   [
+    28,
+    202
+   ]
+  ],
+  "half": [
+   1,
+   7,
+   8,
+   6,
+   1
+  ],
+  "height": [
+   1,
+   8,
+   10,
+   8,
+   1
+  ]
+ },
+ "v_ridge_outer": {
+  "points": [
+   [
+    152,
+    -60
+   ],
+   [
+    150,
+    -20
+   ],
+   [
+    144,
+    30
+   ],
+   [
+    136,
+    80
+   ],
+   [
+    126,
+    126
+   ]
+  ],
+  "half": [
+   1,
+   9,
+   11,
+   9,
+   1
+  ],
+  "height": [
+   1,
+   12,
+   16,
+   12,
+   1
+  ]
+ },
+ "v_keel": {
+  "depth": 40,
+  "ramp": 70,
+  "inset": 4
+ }
+}

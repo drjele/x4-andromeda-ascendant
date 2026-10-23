@@ -314,5 +314,24 @@
   -62.0
  ],
  "_rear_raise": "top_z raised by 15 m behind y -150, full from y -350",
- "smooth_m": 30.0
+ "smooth_m": 30.0,
+ "top_relax": {
+  "sigma": 38,
+  "ranges": [
+   [
+    290,
+    510
+   ],
+   [
+    -10,
+    210
+   ],
+   [
+    -610,
+    10
+   ]
+  ],
+  "fade": 40
+ },
+ "polish_sigma": 22
 }

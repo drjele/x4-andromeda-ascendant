@@ -58,7 +58,8 @@
   "height": [
    3
   ],
-  "closed": true
+  "closed": true,
+  "sharp": true
  },
  "stern_eyes_inner": {
   "view": "behind",
@@ -73,7 +74,8 @@
   "height": [
    2.5
   ],
-  "closed": true
+  "closed": true,
+  "sharp": true
  },
  "flank_blade": {
   "view": "side",

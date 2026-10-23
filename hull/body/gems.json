@@ -1,0 +1,49 @@
+{
+ "_doc": "faceted diamond at the bow tip: outline seen from ahead (x, z offsets from the tip), how far it stands out ahead, how deep it sinks back, front face scale",
+ "bow_diamond": {
+  "outline": [
+   [
+    -17.8,
+    17.8
+   ],
+   [
+    17.8,
+    17.8
+   ],
+   [
+    27.3,
+    8.9
+   ],
+   [
+    26.0,
+    3.6
+   ],
+   [
+    0.0,
+    -24.9
+   ],
+   [
+    -26.0,
+    3.6
+   ],
+   [
+    -27.3,
+    8.9
+   ]
+  ],
+  "centre_z": -70,
+  "thick": 15.2,
+  "taper": 0.88,
+  "flat": 7.6,
+  "facet": 0.45,
+  "rim": 8.3,
+  "soften": 3.5,
+  "step": 1.0,
+  "margin": 26,
+  "forward": 1.5,
+  "apron": 15.2,
+  "top_band": 10.6,
+  "relax": 10,
+  "deck_band": 15.2
+ }
+}

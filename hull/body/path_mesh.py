@@ -14,19 +14,32 @@ def project(view, a, b):
     elif view == "behind": o, d = Vector((a, -3000, b)), Vector((0, 1, 0))
     else: o, d = Vector((3000, a, b)), Vector((-1, 0, 0))
     hit, n, _, _ = tree.ray_cast(o, d, 6000); return hit, n
-def interp(lst, t):
+_PROF = {}
+def interp(lst, t, sig=0.06):
     if len(lst) == 1: return lst[0]
-    x = t * (len(lst) - 1); i = min(int(x), len(lst) - 2); f = x - i
-    return lst[i] + (lst[i + 1] - lst[i]) * f
+    key = tuple(lst)
+    if key not in _PROF:
+        TT = [i / 400 for i in range(401)]; xs = [i / (len(lst) - 1) for i in range(len(lst))]
+        import numpy as _np
+        lin = _np.interp(TT, xs, lst); r = int(3 * sig * 400); k = _np.exp(-0.5 * (_np.arange(-r, r + 1) / (sig * 400)) ** 2); k /= k.sum()
+        _PROF[key] = _np.convolve(_np.pad(lin, r, mode="reflect", reflect_type="odd"), k, "valid")
+    import numpy as _np
+    return max(float(_np.interp(t, _np.linspace(0, 1, 401), _PROF[key])), 0.0)
 def dense(p):
     if "circle" in p:
         cx, cz, r = p["circle"]
-        return [(cx + r * math.cos(2 * math.pi * k / 72), cz + r * math.sin(2 * math.pi * k / 72)) for k in range(72)]
-    pts = p["points"]; out = []
-    for (a0, b0), (a1, b1) in zip(pts, pts[1:]):
-        n = max(2, int(math.hypot(a1 - a0, b1 - b0) / 3))
-        out += [(a0 + (a1 - a0) * k / n, b0 + (b1 - b0) * k / n) for k in range(n)]
-    return out + [tuple(pts[-1])]
+        return [(cx + r * math.cos(2 * math.pi * k / 96), cz + r * math.sin(2 * math.pi * k / 96)) for k in range(96)]
+    pts = [tuple(q) for q in p["points"]]
+    # Catmull-Rom through the points, sampled about every 2 m
+    P_ = [pts[0]] + pts + [pts[-1]]; out = []
+    for i in range(1, len(P_) - 2):
+        p0, p1, p2, p3 = P_[i - 1], P_[i], P_[i + 1], P_[i + 2]
+        n = max(2, int(math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / 2))
+        for k in range(n):
+            t = k / n
+            out.append(tuple(0.5 * (2 * p1[c] + (p2[c] - p0[c]) * t + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * t * t + (3 * p1[c] - p0[c] - 3 * p2[c] + p3[c]) * t ** 3) for c in (0, 1)))
+    return out + [pts[-1]]
+
 def build(bm, p, side):
     path = []
     for a, b in dense(p):
@@ -34,6 +47,8 @@ def build(bm, p, side):
         else: hit, n = project(p["view"], a * side, b)
         if hit: path.append((hit, n))
     closed = p.get("closed", False); N = len(path)
+    win = 4
+    path = [(path[i][0], sum((path[(i + k) % N if closed else min(max(i + k, 0), N - 1)][1] for k in range(-win, win + 1)), Vector()).normalized()) for i in range(N)]
     rows = []
     for i, (pt, n) in enumerate(path):
         t = i / (N - 1 if not closed else N)
@@ -84,6 +99,10 @@ for name, p in F.items():
     else:
         for s in sides: build(bm, p, s)
     bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=0.05)
+    if not p.get("sharp"):
+        free = [v for v in bm.verts if not v.is_boundary]
+        for _ in range(p.get("relax", 4)):
+            bmesh.ops.smooth_vert(bm, verts=free, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     me = bpy.data.meshes.new(name); bm.to_mesh(me)
     if p["view"] == "side":
