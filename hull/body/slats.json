@@ -1,0 +1,18 @@
+{
+ "_doc": "horizontal slat batteries on the body flank, mirrored: y span, the z of each slat, how far they stand out, their thickness and the extra half width of the sunk base",
+ "flank_slats": {
+  "y": [
+   130,
+   320
+  ],
+  "z": [
+   -88,
+   -66,
+   -44,
+   -22
+  ],
+  "reach": 60,
+  "thick": 3,
+  "base": 4
+ }
+}

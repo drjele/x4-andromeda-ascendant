@@ -10,9 +10,8 @@ for o in [o for o in sc.objects if o.name in F]: bpy.data.objects.remove(o)
 body = sc.objects["corp"]; bb = bmesh.new(); bb.from_mesh(body.data); tree = BVHTree.FromBMesh(bb)
 SINK = 3.0; NR, NA = 32, 72
 BLEND = 1.35
-for name, p in F.items():
-    if name.startswith("_"): continue
-    bm = bmesh.new(); rings = []
+def dome(bm, p, sx):
+    rings = []
     for i in range(NR + 1):
         r = BLEND * i / NR
         row = []
@@ -26,6 +25,7 @@ for name, p in F.items():
                 if hit is None: hit, nrm = Vector((ox, -780, p["z"] + oy)), Vector((0, -1, 0))
                 lift = p["height"] * (1 - min(1.0, BLEND * i / NR / BLEND) ** p["profile_n"]) ** 2 if i < NR else -SINK
                 row.append(bm.verts.new(hit + Vector((0, -1, 0)) * lift)); continue
+            ox = ox + sx * p.get("x", 0)
             hit, nrm, _, _ = tree.ray_cast(Vector((ox, p["y"] + oy, -2000 * down)), Vector((0, 0, down)), 4000)
             if hit is None: hit, nrm = Vector((ox, p["y"] + oy, 0)), Vector((0, 0, 1))
             # flat-topped core, then a tangent fillet that fades into the body by r = BLEND
@@ -40,11 +40,14 @@ for name, p in F.items():
         for k in range(NA): bm.faces.new((a[k], b[k], b[(k + 1) % NA], a[(k + 1) % NA]))
     for v in rings[0]:
         if v is not top and not v.link_faces: bm.verts.remove(v)
-    bm.normal_update()
-    bm.faces.ensure_lookup_table()
+    faces = [f for f in bm.faces if f not in done]; done.update(faces); bm.normal_update()
     if p.get("behind"):
-        if bm.faces[0].normal.y > 0: bmesh.ops.reverse_faces(bm, faces=bm.faces[:])
-    elif (bm.faces[0].normal.z < 0) != bool(p.get("under")): bmesh.ops.reverse_faces(bm, faces=bm.faces[:])
+        if faces[0].normal.y > 0: bmesh.ops.reverse_faces(bm, faces=faces)
+    elif (faces[0].normal.z < 0) != bool(p.get("under")): bmesh.ops.reverse_faces(bm, faces=faces)
+for name, p in F.items():
+    if name.startswith("_"): continue
+    bm = bmesh.new(); done = set()
+    for sx in ((1, -1) if p.get("x") else (1,)): dome(bm, p, sx)
     me = bpy.data.meshes.new(name); bm.to_mesh(me)
     for pp in me.polygons: pp.use_smooth = True
     sc.collection.objects.link(bpy.data.objects.new(name, me))

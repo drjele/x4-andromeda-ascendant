@@ -1,30 +1,23 @@
 # Scales along the outer underside of each lower arm: overlapping leaves, each rooted in the arm at its
 # front and lifting off toward its back edge, like shingles pointing aft.
-import bpy, bmesh, json, math
+import bpy, bmesh, json, math, sys
 import numpy as np
 from mathutils import Vector, Matrix
+from mathutils.bvhtree import BVHTree
 D = "/home/adrian/projects/drjele/x4-andromeda-ascendant/.temp"
+sys.path.insert(0, f"{D}/arms"); from a_frame import member, frame, cast
 A = json.load(open(f"{D}/arms/a_params.json"))["members"]["arm"]; S = json.load(open(f"{D}/arms/a_deco.json"))["scales"]
 bpy.ops.wm.open_mainfile(filepath=f"{D}/vtop/v_scene.blend")
 sc = bpy.data.scenes["seg"]
 for o in [o for o in sc.objects if o.name in ("scales_r", "scales_l")]: bpy.data.objects.remove(o)
-def catmull(pts, n):
-    p = np.array(pts, float); p = np.vstack([p[:1], p, p[-1:]]); out = []
-    for i in range(1, len(p) - 2):
-        p0, p1, p2, p3 = p[i - 1:i + 3]
-        for t in np.linspace(0, 1, n, endpoint=False):
-            out.append(0.5 * (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (3 * p1 - p0 - 3 * p2 + p3) * t ** 3))
-    out.append(p[-2]); return np.array(out)
-C = catmull(A["path"], 10); s = np.r_[0, np.cumsum(np.linalg.norm(np.diff(C, axis=0), axis=1))]; f = s / s[-1]
-Sec = np.array(A["sections"], float); W = np.interp(f, Sec[:, 0], Sec[:, 1]); H = np.interp(f, Sec[:, 0], Sec[:, 2])
+b = bmesh.new(); b.from_mesh(sc.objects["arm_r"].data); T = BVHTree.FromBMesh(b)
+C, f, W, H, R = member(A)
 front = (C[:, 1] > -700) & (C[:, 2] < -100)
 bm = bmesh.new()
 for y in np.linspace(*S["y"], S["count"]):
     i = np.where(front)[0][np.argmin(np.abs(C[front, 1] - y))]
-    t = C[min(i + 1, len(C) - 1)] - C[max(i - 1, 0)]; t /= np.linalg.norm(t)
-    w = np.cross(t, [0, 0, 1.0]); w /= np.linalg.norm(w); w = w if w[0] > 0 else -w; u = np.cross(t, w) if np.cross(t, w)[2] > 0 else np.cross(w, t)
-    a = math.radians(S["angle"]); p = C[i] + w * W[i] / 2 * math.cos(a) + u * H[i] / 2 * math.sin(a)
-    n = w * math.cos(a) / (W[i] / 2) + u * math.sin(a) / (H[i] / 2); n /= np.linalg.norm(n)
+    t, w, u = frame(C, i, oriented=True); a = math.radians(S["angle"])
+    p, n = cast(T, C[i], w * math.cos(a) + u * math.sin(a))          # rooted on the built arm, not the ideal section
     back = -t if t[1] > 0 else t; back = back - n * back.dot(n); back /= np.linalg.norm(back); side = np.cross(n, back)
     L, R = S["length"], S["width"] / 2; rows = []
     for k in range(13):

@@ -1,1 +1,1 @@
-{"y_min": -160, "smooth_cells": 7, "min_thick": 20, "max_thick": 46, "rim": 40, "x_cut": [[-160, 150], [-60, 175], [60, 190], [200, 200], [440, 200]], "top_smooth": 5, "bot_smooth": 6}
+{"y_min": -160, "smooth_cells": 7, "min_thick": 20, "max_thick": 46, "rim": 80, "x_cut": [[-160, 150], [-60, 175], [60, 190], [200, 200], [440, 200]], "top_smooth": 8, "bot_smooth": 6, "tip_taper": {"from": 120, "to": 440, "min": 0.42}}

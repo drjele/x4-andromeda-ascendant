@@ -28,6 +28,7 @@ for z in P["levels"]:
         x0, x1 = sp[0], sp[1] - inset
         xs = np.linspace(x0, x1, 12)
         rows.append([(bm.verts.new((x, y, z + t)), bm.verts.new((x, y, z - t))) for x in xs])
+    rows = [r if r and ((i and rows[i - 1]) or (i + 1 < len(rows) and rows[i + 1])) else None for i, r in enumerate(rows)]   # a lone row has no deck to cap
     for r0, r1 in zip(rows, rows[1:]):
         if r0 is None or r1 is None: continue
         for i in range(11):

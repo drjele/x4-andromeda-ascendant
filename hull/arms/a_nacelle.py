@@ -1,36 +1,33 @@
-# The nacelle on the outer flank of each lower arm: a raised rounded housing seen from outboard, with a
-# recessed slot along it (where the cyan grille goes), lifted along the arm's normal.
-import bpy, bmesh, json
+# The cyan housing on the outer flank of each lower arm (ref 12, the lower-outer corner of each loop): a low
+# rounded housing with a recessed, key-ribbed slot, cast onto the built strap from its path.
+import bpy, bmesh, json, math, sys
 import numpy as np
-from mathutils import Vector, Matrix
+from mathutils import Matrix
 from mathutils.bvhtree import BVHTree
 D = "/home/adrian/projects/drjele/x4-andromeda-ascendant/.temp"
-N = json.load(open(f"{D}/arms/a_deco.json"))["nacelle"]
+sys.path.insert(0, f"{D}/arms"); from a_frame import member, frame, cast, housing, grid_mesh
+P = json.load(open(f"{D}/arms/a_params.json")); N = json.load(open(f"{D}/arms/a_deco.json"))["nacelle"]
 bpy.ops.wm.open_mainfile(filepath=f"{D}/vtop/v_scene.blend")
 sc = bpy.data.scenes["seg"]
 for o in [o for o in sc.objects if o.name in ("nacelle_r", "nacelle_l")]: bpy.data.objects.remove(o)
 b = bmesh.new(); b.from_mesh(sc.objects["arm_r"].data); T = BVHTree.FromBMesh(b)
-def rrect(Y, Z, y, z, r):
-    # signed distance inside a rounded rectangle in the y-z plane (positive inside)
-    cy, cz = (y[0] + y[1]) / 2, (z[0] + z[1]) / 2; hy, hz = (y[1] - y[0]) / 2 - r, (z[1] - z[0]) / 2 - r
-    qy, qz = np.abs(Y - cy) - hy, np.abs(Z - cz) - hz
-    out = np.hypot(np.maximum(qy, 0), np.maximum(qz, 0)) + np.minimum(np.maximum(qy, qz), 0) - r
-    return -out
-S = N["slot"]; M = 14
-ys = np.arange(N["y"][0] - M, N["y"][1] + M, 1.5); zs = np.arange(N["z"][0] - M, N["z"][1] + M, 1.5); Y, Z = np.meshgrid(ys, zs)
-d = rrect(Y, Z, N["y"], N["z"], 22)
-u = np.clip(d / N["rim"], 0, 1); L = N["lift"] * np.sin(u * np.pi / 2)
-ds = rrect(Y, Z, S["y"], S["z"], 10); us = np.clip(ds / S["rim"], 0, 1); L = L - S["depth"] * us * us * (3 - 2 * us)
-L = L - 0.8 * (d < 0)
+C, f, W, H, R = member(P["members"]["arm"], 40); M = 16
+idx = np.where((f >= N["f"][0]) & (f <= N["f"][1]))[0]
+s = np.r_[0, np.cumsum(np.linalg.norm(np.diff(C[idx], axis=0), axis=1))]; s -= s[-1] / 2
+re = (W[idx] + H[idx]).mean() / 4                                   # metres per radian across the band
+ang = np.radians(np.arange(N["angle"][0], N["angle"][1] + 0.1, 1.5)); am = np.radians(sum(N["angle"]) / 2)
+S, A = np.meshgrid(s, (ang - am) * re)
+sf = lambda ff: np.interp(ff, f[idx], s); av = lambda a: (math.radians(a) - am) * re
+spec = {"x": [s[0] + M, s[-1] - M], "y": [av(N["angle"][0]) + M, av(N["angle"][1]) - M], "lift": N["lift"], "rim": N["rim"], "keys": N["keys"],
+        "slot": {"x": [sf(N["slot"]["f"][0]), sf(N["slot"]["f"][1])], "y": [av(N["slot"]["angle"][0]), av(N["slot"]["angle"][1])], "depth": N["slot"]["depth"], "rim": N["slot"]["rim"]}}
+L = housing(S, A, spec, keys_axis=S)
 bm = bmesh.new(); G = {}
-for i in range(len(zs)):
-    for j in range(len(ys)):
-        hit, nrm, _, _ = T.ray_cast(Vector((1200, ys[j], zs[i])), Vector((-1, 0, 0)), 1500)
+for i, a in enumerate(ang):
+    for j, k in enumerate(idx):
+        t, w, u = frame(C, k, oriented=True); hit, nrm = cast(T, C[k], w * math.cos(a) + u * math.sin(a))
         if hit is not None: G[(i, j)] = bm.verts.new(hit + nrm * float(L[i, j]))
-for (i, j) in list(G):
-    q = [G.get((i, j)), G.get((i, j + 1)), G.get((i + 1, j + 1)), G.get((i + 1, j))]
-    if None not in q: bm.faces.new(q)
-for _ in range(2): bmesh.ops.smooth_vert(bm, verts=[v for v in bm.verts if not v.is_boundary], factor=0.4, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+grid_mesh(bm, G, len(ang), len(idx), keep=L > 0)
+for _ in range(2): bmesh.ops.smooth_vert(bm, verts=[v for v in bm.verts if not v.is_boundary], factor=0.3, use_axis_x=True, use_axis_y=True, use_axis_z=True)
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 me = bpy.data.meshes.new("nacelle_r"); bm.to_mesh(me)
 for p in me.polygons: p.use_smooth = True
@@ -38,4 +35,4 @@ sc.collection.objects.link(bpy.data.objects.new("nacelle_r", me))
 ml = me.copy(); ml.name = "nacelle_l"; ml.transform(Matrix.Scale(-1, 4, (1, 0, 0))); ml.flip_normals()
 sc.collection.objects.link(bpy.data.objects.new("nacelle_l", ml))
 bpy.data.libraries.write(f"{D}/vtop/v_scene.blend", {sc}, fake_user=True)
-print("NACELLE ok")
+print("NACELLE ok", len(me.polygons))

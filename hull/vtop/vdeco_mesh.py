@@ -38,7 +38,7 @@ def ridge(bm, p, side):
     for a, b in zip(rows, rows[1:]):
         for j in range(NU): bm.faces.new((a[j], a[j + 1], b[j + 1], b[j]))
 for name, p in F.items():
-    if name.startswith("_"): continue
+    if name.startswith("_") or name == "cavities": continue
     bm = bmesh.new()
     if name == "v_keel":
         k = np.load(f"{D}/vkeel.npz"); kx, ky, km, kd, ku = k["xs"], k["ys"], k["mask"], k["depth"], k["under"]; G = {}

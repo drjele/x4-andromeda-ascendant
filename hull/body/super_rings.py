@@ -75,9 +75,10 @@ else:
 ZC = (TOP + BOT) / 2; HB = (TOP - BOT) / 2
 ANG = 128; th = 2 * np.pi * np.arange(ANG) / ANG; c, s = np.cos(th), np.sin(th)
 top_n = P.get("top_n", 2.0)
+TNY = P.get("top_n_y"); TN = gs(np.interp(Y, [p[0] for p in TNY], [p[1] for p in TNY]), 40.0) if TNY else np.full(len(Y), top_n)   # no ring where the section shape changes
 rings = []
 for i, yy in enumerate(Y):
-    nn = np.where(s > 0, top_n, N[i])
+    nn = np.where(s > 0, TN[i], N[i])
     x = A[i] * np.sign(c) * np.abs(c) ** (2 / nn); z = ZC[i] + HB[i] * np.sign(s) * np.abs(s) ** (2 / nn)
     rings.append([[float(u), float(yy), float(v)] for u, v in zip(x, z)])
 json.dump(rings, open("super_rings.json", "w"))

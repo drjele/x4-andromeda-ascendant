@@ -1,27 +1,18 @@
-# Arm members as swept tubes with elliptical sections (width outboard-level, height up), voxelized by
-# ray parity for the smooth union, with the exact distance to the tube in a band around its surface; the
-# body and the V plate are voxelized too, so the roots can be filleted onto them.
-import bpy, bmesh, json, math
+# Arm members as swept straps (rounded-rectangle sections: width outboard-level, height up, flat top and
+# bottom), voxelized by ray parity for the smooth union, with the exact distance to the strap in a band around
+# its surface; the body and the V plate are voxelized too, so the roots can be filleted onto them.
+import bpy, bmesh, json, math, sys
 import numpy as np
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 D = "/home/adrian/projects/drjele/x4-andromeda-ascendant/.temp"
+sys.path.insert(0, f"{D}/arms"); from a_frame import member, frame, ring
 P = json.load(open(f"{D}/arms/a_params.json"))
-def catmull(pts, n):
-    p = np.array(pts, float); p = np.vstack([p[:1], p, p[-1:]]); out = []
-    for i in range(1, len(p) - 2):
-        p0, p1, p2, p3 = p[i - 1:i + 3]
-        for t in np.linspace(0, 1, n, endpoint=False):
-            out.append(0.5 * (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (3 * p1 - p0 - 3 * p2 + p3) * t ** 3))
-    out.append(p[-2]); return np.array(out)
 def tube(m):
-    C = catmull(m["path"], 10); s = np.r_[0, np.cumsum(np.linalg.norm(np.diff(C, axis=0), axis=1))]; f = s / s[-1]
-    S = np.array(m["sections"], float); W = np.interp(f, S[:, 0], S[:, 1]); H = np.interp(f, S[:, 0], S[:, 2])
-    bm = bmesh.new(); rings = []; K = 32
+    C, f, W, H, R = member(m); bm = bmesh.new(); rings = []; K = 48
     for i, c in enumerate(C):
-        t = C[min(i + 1, len(C) - 1)] - C[max(i - 1, 0)]; t /= np.linalg.norm(t)
-        w = np.cross(t, [0, 0, 1.0]); w = w / np.linalg.norm(w) if np.linalg.norm(w) > 1e-3 else np.array([1.0, 0, 0]); u = np.cross(w, t)
-        rings.append([bm.verts.new(c + w * W[i] / 2 * math.cos(a) + u * H[i] / 2 * math.sin(a)) for a in np.linspace(0, 2 * math.pi, K, endpoint=False)])
+        t, w, u = frame(C, i)
+        rings.append([bm.verts.new(c + w * x + u * z) for x, z in ring(W[i], H[i], R[i], K)])
     for a, b in zip(rings, rings[1:]):
         for k in range(K): bm.faces.new((a[k], a[(k + 1) % K], b[(k + 1) % K], b[k]))
     bm.faces.new(rings[0][::-1]); bm.faces.new(rings[-1])

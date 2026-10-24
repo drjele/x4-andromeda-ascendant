@@ -43,6 +43,11 @@ for _ in range(3):
     gs = np.clip(gap(BT) / F["slot_width"], 0, 1); BTf = BTf + F["slot_lift"] * hy * (1 - gs) ** 2
 BTf = np.minimum(BTf, TPf - P["thick_min"] * 0.6)
 BTf = np.maximum(BTf, TPf - P["thick_max"] - F["bottom"])
+TO = P.get("thin_out")
+if TO:
+    # thinner toward the outer edge as well, so the wing meets the arm strap with a thin edge instead of a collar
+    go = np.clip((P["x_max"] - X) / TO["reach"], 0, 1); _b = TO["to"] + go * 120; _a = TPf - BTf
+    _h = np.clip(0.5 + 0.5 * (_b - _a) / _k, 0, 1); BTf = TPf - (_b * (1 - _h) + _a * _h - _k * _h * (1 - _h))
 TP, TH = TPf, TPf - BTf
 # inboard of where each face enters the body it is held under the body's upper surface (the flank recedes
 # above the widest point) and over its lower surface (the stern belly is shallow), so the inner end stays
@@ -102,5 +107,5 @@ dtop = dtop + c * np.maximum(BTf + Dk["into_wing"] - dtop, 0)
 thk = (Dk["top"] - Dk["bottom"]) * (0.35 + 0.65 * dy) + c * np.maximum(BTf + Dk["into_wing"] - dtop, 0)
 sdd = fine_sdist(gaussian_filter(md, 2.0)); md2 = sdd > 0
 dmid = zoom(dtop - thk / 2, k, order=3); dhalf = zoom(thk / 2, k, order=3)
-np.savez("ldeck.npz", xs=X2, ys=Y2, mask=md2, mid=dmid, hf=dhalf, sd=sdd, sdm=sdd, rim=12)
+np.savez("ldeck.npz", xs=X2, ys=Y2, mask=md2, mid=dmid, hf=dhalf, sd=sdd, sdm=sdd, rim=Dk.get("rim", 12))
 print("deck cells", md2.sum())
