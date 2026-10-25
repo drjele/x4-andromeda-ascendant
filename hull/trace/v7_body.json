@@ -1,0 +1,16 @@
+{
+ "_doc": "v7_body.py: even (optional, off) = aft half width from y0 (mid-body value) to stern_half at y1, power shapes the fall, the stern rounding kept within tip_fade of tip; deck = right-half plan outline (front follows the crescent's horseshoe, inner edge then outer edge), crisp rim from front[0] to front[1], horns tapering to horn_tip of the height between horns[0] and horns[1], height fading out over stern_fade and where the body normal turns from up (flank[1]) to sideways (flank[0]); lift = decorations re-seated on the new deck; rings = tube radius of the stern eye rings C13/C13b, ring_sink = share of the tube sunk into the stern face; dome_dy moves C4; reseat = fairings lifted back onto the fitted skin so their edge is sunk by sink; window = C12 as a flat plate inside C8's opening (gap to the tube, thickness off the stern face, edge = where the rim starts rounding)",
+ "deck": {
+  "outline": [[0, 228], [12, 229], [24, 233], [34, 242], [43, 256], [50, 274], [54, 295], [57, 318], [59, 340], [61, 360], [68, 372], [78, 364], [84, 330], [88, 295], [94, 262], [104, 222], [125, 60], [148, -140], [158, -340], [158, -500], [145, -610], [100, -680], [0, -700]],
+  "height": 26, "rim": 24, "apron": 70, "round": 0.3,
+  "front": [60, 220], "front_rim": 4, "front_apron": 4,
+  "horns": [262, 364], "horn_tip": 1.0,
+  "stern_fade": [-715, -540],
+  "flank": [0.45, 0.8]
+ },
+ "lift": ["dorsal_shoulder", "rear_shoulder", "dorsal_dome"],
+ "rings": {"stern_eyes": 4.0, "stern_eyes_inner": 3.0}, "ring_sink": 0.35,
+ "dome_dy": -180,
+ "reseat": {"parts": ["golf_club"], "sink": 3.0},
+ "window": {"gap": 2, "thick": 3, "edge": 0.8}
+}

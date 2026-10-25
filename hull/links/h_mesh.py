@@ -1,6 +1,6 @@
-# Hangar decks inside the Y of each link: thin level plates stacked in the tunnel between the two branches,
-# running from the body fillet to the wing's underside, open toward the bow; and the slat battery at the back of
-# the recess, thin horizontal blades with gaps between the decks.
+# Hangar decks inside the Y of each link: level plates stacked in the tunnel between the two branches,
+# running from the body fillet to the wing's underside, open toward the bow; optionally (h_params "slats") the slat
+# battery at the back of the recess, thin horizontal blades with gaps between the decks.
 import bpy, bmesh, json
 import numpy as np
 from mathutils import Vector, Matrix
@@ -20,9 +20,9 @@ for z in P["levels"] + slats:
     ys = np.arange(P["y"][0], (P["y"][1] if deck else SL["y"][1]) + 0.1, P["step"]); spans = []
     for y in ys:
         a, an = T.ray_cast(Vector((238, y, z)), Vector((-1, 0, 0)), 250)[:2]; c, cn = T.ray_cast(Vector((238, y, z)), Vector((1, 0, 0)), 300)[:2]
-        # the hits must be the flank and the wing's underside facing the tunnel, else the row lies inside
+        # the hits must be the flank and the Y's outer wall facing into the tunnel, else the row lies inside
         # the closed stern of the Y and gets no deck
-        spans.append((a.x - P["inset"][0], c.x + P["inset"][1]) if a is not None and c is not None and an.x > 0 and cn.x < 0 and cn.z < 0.3 and c.x - a.x > 8 else None)
+        spans.append((a.x - P["inset"][0], c.x + P["inset"][1]) if a is not None and c is not None and an.x > 0 and cn.x < -0.2 and c.x - a.x > 8 else None)
     # the front corners round off so each deck reads as a lip, not a cut box
     rows = []
     for y, sp in zip(ys, spans):

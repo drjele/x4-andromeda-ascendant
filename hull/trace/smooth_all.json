@@ -1,0 +1,33 @@
+{
+ "_doc": "smooth_all.py: Taubin passes per part label (exact label first, then its group letter, then default); lambda shrinks, mu (negative, slightly larger) inflates back; border = passes that smooth each open border along itself (a jagged edge becomes a clean curve)",
+ "lambda": 0.5,
+ "mu": -0.53,
+ "passes": {
+  "default": 40,
+  "C0": 60,
+  "C22": 60,
+  "L": 90,
+  "U": 90,
+  "G": 60,
+  "A": 12,
+  "C13": 0,
+  "C13b": 0,
+  "C8": 5,
+  "C12": 0,
+  "V": 50,
+  "H": 0,
+  "C7": 3,
+  "C9": 3,
+  "C10": 3,
+  "C11": 8,
+  "C14": 8,
+  "C15": 8,
+  "C17": 8,
+  "C5": 10,
+  "C6": 10,
+  "V3": 8,
+  "V4": 8,
+  "G2": 8
+ },
+ "border": 30
+}
