@@ -15,11 +15,15 @@ blender -b --python ../trace/deck_lift.py 2>&1 | grep LIFTED
 # V7: the deck rebuilt with the crescent as its front (C16 removed), C4 aft, C12 inside C8, C13 rings
 blender -b --python ../trace/v7_body.py 2>&1 | grep "V7 BODY"
 ( cd ../arms && blender -b --python a_sweep.py 2>&1 | grep -iE 'error|traceback'; blender -b --python a_joints.py 2>&1 | grep -iE 'error|traceback'; ../overlay/.venv/bin/python a_joints_sdf.py >/dev/null && blender -b --python a_joints_mesh.py 2>&1 | grep -iE 'error|traceback'; blender -b --python a_scales.py 2>&1 | grep -iE 'error|traceback'; blender -b --python a_ribs.py 2>&1 | grep -iE 'error|traceback'; blender -b --python a_wing.py 2>&1 | grep -iE 'error|traceback' ) || true
-( cd ../links && blender -b --python l_body.py 2>&1 | grep -iE "error|traceback"; ../overlay/.venv/bin/python l_prep.py >/dev/null && blender -b --python l_vox.py 2>&1 | grep -iE 'error|traceback'; ../overlay/.venv/bin/python l_sdf.py >/dev/null && blender -b --python l_mesh.py 2>&1 | grep -iE 'error|traceback'; blender -b --python h_mesh.py 2>&1 | grep -iE 'error|traceback' ) || true   # wing decorations (W1 sockets, W2 ribs) removed at the user's request 2026-10-25
+( cd ../links && blender -b --python l_body.py 2>&1 | grep -iE "error|traceback"; ../overlay/.venv/bin/python l_prep.py >/dev/null && blender -b --python l_vox.py 2>&1 | grep -iE 'error|traceback'; ../overlay/.venv/bin/python l_sdf.py >/dev/null && blender -b --python l_mesh.py 2>&1 | grep -iE 'error|traceback' ) || true   # wing decorations (W1 sockets, W2 ribs) removed at the user's request 2026-10-25
 ( cd ../uarch && blender -b --python g_sweep.py 2>&1 | grep -iE 'error|traceback'; ../overlay/.venv/bin/python g_sdf.py >/dev/null && blender -b --python g_mesh.py 2>&1 | grep -iE "error|traceback"; blender -b --python g_nacelle.py 2>&1 | grep -iE "error|traceback"; blender -b --python g_grille.py 2>&1 | grep -iE "error|traceback" ) || true
 ( cd ../upper && blender -b --python u_vox.py 2>&1 | grep -iE 'error|traceback'; ../overlay/.venv/bin/python u_sdf.py >/dev/null && blender -b --python u_mesh.py 2>&1 | grep -iE 'error|traceback' ) || true
 # every surface evened out last (Taubin, per group passes in smooth_all.json)
 cp ../vtop/v_scene.blend ../vtop/v_scene_presmooth.blend      # to retune smooth_all.json without a full rebuild
 blender -b --python ../trace/smooth_all.py 2>&1 | grep -oE "^SMOOTH .{0,80}"
+blender -b --python ../trace/v1_blend.py 2>&1 | grep "V1 BLEND"
+blender -b --python ../trace/fill_holes.py 2>&1 | grep HOLES
+# the hangar decks last, fitted inside the smoothed links (built earlier they poked through the wing)
+( cd ../links && blender -b --python h_mesh.py 2>&1 | grep -iE 'error|traceback' ) || true
 blender -b --python ../trace/list_parts.py 2>&1 | grep -E "MISSING|EXTRA"
 ./reload.sh

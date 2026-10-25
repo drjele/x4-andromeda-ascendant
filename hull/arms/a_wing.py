@@ -15,11 +15,12 @@ s = np.r_[0, np.cumsum(np.linalg.norm(np.diff(C, axis=0), axis=1))]; t = np.r_[n
 Cu = np.stack([np.interp(t, s, C[:, c]) for c in range(3)], 1); fu, Wu, Hu, Ru = (np.interp(t, s, v) for v in (f, W, H, R))
 idx = np.where((fu >= N["f"][0]) & (fu <= N["f"][1]))[0]; su = t[idx] - t[idx[0]]
 reach = np.interp(fu[idx], *zip(*N["reach"]))
+lift = np.interp(fu[idx], *zip(*N["lift"])) if "lift" in N else np.zeros(len(idx))   # the apex raised toward the V plate at the junction
 kk = np.clip((0.5 + 0.5 * np.cos(2 * np.pi * su / N["keys"]["pitch"])) * 1.5 - 0.25, 0, 1); key = kk * kk * (3 - 2 * kk) * N["keys"]["h"]
 m = 6; bm = bmesh.new(); rows = []
 for n, k in enumerate(idx):
     tt, w, u = frame(Cu, k, oriented=True); half = Hu[k] / 2 - min(Ru[k] * Hu[k] / 2, Wu[k] / 2, Hu[k] / 2) * 0.35   # the flat inner side of the strap
-    edge = Cu[k] - w * (Wu[k] / 2 - N["sink"]); apex = Cu[k] - w * (Wu[k] / 2 + reach[n])
+    edge = Cu[k] - w * (Wu[k] / 2 - N["sink"]); apex = Cu[k] - w * (Wu[k] / 2 + reach[n]) + np.array([0, 0, lift[n]])
     tb, bb = edge + u * half * N["base_scale"], edge - u * half * N["base_scale"]
     row = []
     for side, bp in ((1, tb), (-1, bb)):

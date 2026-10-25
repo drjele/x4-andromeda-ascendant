@@ -29,6 +29,10 @@ def relax(o, dz, n=12):
     for _ in range(n): dz = [0.5 * d + 0.5 * (sum(dz[j] for j in q) / len(q)) if q else d for d, q in zip(dz, nb)]
     return np.array(dz)
 log = []
+# parts the user had removed (C16 lives on as the deck's horseshoe front, C1 and C14 were dropped on 2026-10-25)
+for name in K.get("remove", []):
+    o = sc.objects.get(name)
+    if o is not None: bpy.data.objects.remove(o); log.append("removed " + name)
 
 # 1. (optional) even aft body: half width eases from its mid-body value at y0 down to `stern_half` at y1, the stern's own rounding kept
 E = K.get("even")   # off since the user asked for V4's plain body (no section set in v7_body.json)
@@ -49,7 +53,7 @@ if E:
 # 2. the deck rebuilt over the evened body: plan outline from v7_body.json (front = the crescent's horseshoe), a crisp
 # rim at the horseshoe, the horns tapering down like the crescent did, and the height fading where the body turns down
 old_deck = tree(["corp", "rear_deck"]); C = K["deck"]
-for o in [o for o in sc.objects if o.name in ("rear_deck", "dorsal_crescent")]: bpy.data.objects.remove(o)
+for o in [o for o in sc.objects if o.name == "rear_deck"]: bpy.data.objects.remove(o)
 body = tree(["corp"])
 def rounded(outline, n=480, r=0.3):
     Pt = np.array(outline, float); Pt = np.vstack([Pt, Pt[:1]]); seg = np.r_[0, np.cumsum(np.linalg.norm(np.diff(Pt, axis=0), axis=1))]
@@ -82,7 +86,16 @@ Lf = L * Fl                                   # only the flank fade is blurred: 
 bm = bmesh.new(); G = {}
 for (i, j), (hit, nrm) in HIT.items():
     lift = float(Lf[i, j]); G[(i, j)] = (hit, nrm, lift + 0.3 - 3.3 * (1 - min(1.0, lift / 2.0)) ** 2)
-V = {key: bm.verts.new(hit + nrm * lift) for key, (hit, nrm, lift) in G.items()}
+# from flat[0] to flat[1] the top turns into a level plane at the deck's height over the centreline (the crescent
+# reads flat), its rim dropping to the body in proportion to the lift so the edge stays a smooth slope
+def level(y):
+    h = body.ray_cast(Vector((0, y, 900)), Vector((0, 0, -1)), 1800)[0]; return (h.z if h is not None else 0.0) + C["height"]
+V = {}
+for key, (hit, nrm, lift) in G.items():
+    w = min(1.0, max(0.0, (hit.y - C["flat"][0]) / (C["flat"][1] - C["flat"][0]))) if "flat" in C else 0.0
+    p = hit + nrm * lift
+    if w > 0: p = p * (1 - w) + (hit + Vector((0, 0, (level(hit.y) - hit.z) * max(lift, -3.0) / C["height"]))) * w
+    V[key] = bm.verts.new(p)
 for (i, j) in list(V):
     qd = [V.get((i, j)), V.get((i, j + 1)), V.get((i + 1, j + 1)), V.get((i + 1, j))]
     if None not in qd: bm.faces.new(qd)

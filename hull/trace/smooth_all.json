@@ -1,20 +1,20 @@
 {
- "_doc": "smooth_all.py: Taubin passes per part label (exact label first, then its group letter, then default); lambda shrinks, mu (negative, slightly larger) inflates back; border = passes that smooth each open border along itself (a jagged edge becomes a clean curve)",
+ "_doc": "smooth_all.py: Taubin passes per part label (exact label first, then its group letter, then default); lambda shrinks, mu (negative, slightly larger) inflates back; border = passes that smooth each open border along itself (a jagged edge becomes a clean curve); revert_ring = rings of neighbours restored around a face the smoothing folded over",
  "lambda": 0.5,
  "mu": -0.53,
  "passes": {
-  "default": 40,
-  "C0": 60,
-  "C22": 60,
-  "L": 90,
-  "U": 90,
-  "G": 60,
-  "A": 12,
+  "default": 60,
+  "C0": 90,
+  "C22": 90,
+  "L": 130,
+  "U": 130,
+  "G": 90,
+  "A": 20,
   "C13": 0,
   "C13b": 0,
   "C8": 5,
   "C12": 0,
-  "V": 50,
+  "V": 75,
   "H": 0,
   "C7": 3,
   "C9": 3,
@@ -29,5 +29,6 @@
   "V4": 8,
   "G2": 8
  },
- "border": 30
+ "border": 30,
+ "revert_ring": 2
 }

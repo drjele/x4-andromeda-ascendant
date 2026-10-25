@@ -1,0 +1,15 @@
+{
+ "_doc": "v1_blend.py: seam = |x| of the arm roots' wall against the V plate; probe = how far outboard the root's height is read; above = how far the plate's edge ends above that (overlap); x0 = |x| where the plate starts rising; skin = depth below the top that counts as top skin; under = how far below the root the plate stays past the wall; corner = the plate's rear corner at the seam pulled back by dy (falloff radius, only behind y + front)",
+ "seam": 100,
+ "probe": 4,
+ "above": 1.0,
+ "x0": 40,
+ "skin": 8,
+ "under": 1.5,
+ "corner": {
+  "y": -160,
+  "radius": 45,
+  "dy": -18,
+  "front": 20
+ }
+}

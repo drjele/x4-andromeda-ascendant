@@ -35,6 +35,22 @@ for o in sc.objects:
             for f in (S["lambda"], S["mu"]):
                 s2 = np.zeros_like(v); np.add.at(s2, be[:, 0], v[be[:, 1]]); np.add.at(s2, be[:, 1], v[be[:, 0]])
                 v[bf] += f * (s2[bf] / 2 - v[bf])
+    # faces the smoothing folded over (normal turned more than 60 degrees) render as black hatching: their vertices
+    # and the ring around them go back to where they were
+    loops = [list(p.vertices) for p in me.polygons]; fv = np.zeros(len(v), bool); back = 0
+    def fnorm(x):
+        out = np.zeros((len(loops), 3))
+        for i, l in enumerate(loops):
+            q = x[l]; out[i] = np.cross(q[1:-1] - q[0], q[2:] - q[0]).sum(0)
+        return out / np.maximum(np.linalg.norm(out, axis=1), 1e-12)[:, None]
+    n0 = fnorm(v0)
+    for _ in range(8):
+        bad = np.where((n0 * fnorm(v)).sum(1) < 0.5)[0]
+        if not len(bad): break
+        for i in bad: fv[loops[i]] = True
+        for _r in range(S.get("revert_ring", 2)):
+            nb = fv.copy(); nb[e[:, 0]] |= fv[e[:, 1]]; nb[e[:, 1]] |= fv[e[:, 0]]; fv = nb
+        v[fv] = v0[fv]; back += len(bad)
     for x, p in zip(me.vertices, v): x.co = p.tolist()
-    me.update(); log.append("%s %d %.1f" % (o.name, n, np.abs(v - v0).max()))
+    me.update(); log.append("%s %d %.1f%s" % (o.name, n, np.abs(v - v0).max(), " folds %d" % back if back else ""))
 bpy.data.libraries.write(f"{D}/vtop/v_scene.blend", {sc}, fake_user=True); print("SMOOTH", "; ".join(log))
