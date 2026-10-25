@@ -3,6 +3,7 @@ import json, numpy as np
 from scipy.ndimage import gaussian_filter, distance_transform_edt, binary_closing, binary_opening, label, zoom
 d = np.load("vfield.npz"); xs, ys, top, bot = d["xs"], d["ys"], d["top"], d["bot"]
 P = json.load(open("v_params.json"))
+top = top + P.get("lift", 0); bot = bot + P.get("lift", 0)                # the whole plate raised (the bridge where the arms meet)
 # rays exactly on the seam can slip through: take the x=0 column from its neighbour
 top[:, 0] = np.where(np.isfinite(top[:, 0]), top[:, 0], top[:, 1]); bot[:, 0] = np.where(np.isfinite(bot[:, 0]), bot[:, 0], bot[:, 1])
 mir = lambda a: np.hstack([a[:, :0:-1], a]); X = np.r_[-xs[:0:-1], xs]

@@ -126,10 +126,10 @@
  "remove": [
   "dorsal_crescent",
   "dorsal_shoulder",
-  "flank_blade"
+  "flank_blade",
+  "rear_shoulder"
  ],
  "lift": [
-  "rear_shoulder",
   "dorsal_dome"
  ],
  "rings": {

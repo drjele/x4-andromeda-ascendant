@@ -1,0 +1,1 @@
+{"_doc": "zone_body.py: width ratio and top offset clamps, smoothing sigma along y (m), fade length at the ends (m)", "w_clamp": [0.85, 1.15], "z_clamp": [-40, 40], "sigma": 90, "fade": 120}

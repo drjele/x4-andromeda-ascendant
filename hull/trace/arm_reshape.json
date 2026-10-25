@@ -1,0 +1,72 @@
+{
+ "_doc": "arm_reshape.py: rear = points behind y move back by factor k of their distance to y; height = z scale of the whole path (away from the body); front = between y[0] and y[1] the tips move outward by splay and forward by longer (smoothstep); mid = between y[0] and y[1] the front arc is drawn inward by up to inward (sin^2 bump); junction = the turn into the front arc moved aft (sin^2 bump over y); shoulder = upper branch (z above z[0], full at z[1]) raised by up over y; loop_curl = behind y (over `over` m) the loop's lower part (z below z_top, full z_span lower) raised by up; loop_out = loop wider by out over y; tip_down = front tips lowered over y; thick = sections scaled where the strap runs at |x| > x_min, y range, z < z_max (faded over fade in f)",
+ "rear": {
+  "y": -700,
+  "k": 1.218
+ },
+ "height": 1.055,
+ "front": {
+  "y": [
+   900,
+   1330
+  ],
+  "splay": 45,
+  "longer": 20
+ },
+ "mid": {
+  "y": [
+   350,
+   1050
+  ],
+  "inward": 15
+ },
+ "junction": {
+  "y": [
+   -100,
+   600
+  ],
+  "aft": 90
+ },
+ "shoulder": {
+  "y": [
+   -700,
+   250
+  ],
+  "up": 25,
+  "z": [
+   200,
+   280
+  ]
+ },
+ "loop_curl": {
+  "y": -900,
+  "over": 400,
+  "up": 35,
+  "z_top": 260,
+  "z_span": 200
+ },
+ "loop_out": {
+  "y": [
+   -1200,
+   -600
+  ],
+  "out": 20
+ },
+ "tip_down": {
+  "y": [
+   1000,
+   1250
+  ],
+  "down": 15
+ },
+ "thick": {
+  "x_min": 600,
+  "y": [
+   -400,
+   450
+  ],
+  "z_max": -180,
+  "scale": 1.15,
+  "fade": 0.03
+ }
+}

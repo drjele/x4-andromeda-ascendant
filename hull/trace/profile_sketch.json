@@ -1,0 +1,65 @@
+{
+ "_doc": "profile_sketch.py displacement fields (world metres): top = dz over y bump for z above z ramp; bow = squash of z above base by scale at the bump; rear = behind y[0]..y[1] the loop end moves top/bottom (split at mid); uarch = dz over y bump for z below z ramp; tips = dz ramping in over y for z below z; upper_aft = dy for the arms/bridge/upper wings, growing with z over the z ramp (full at the junction, fading down the front arms), from y_from",
+ "top": {
+  "y": [
+   -1450,
+   330
+  ],
+  "z": [
+   180,
+   260
+  ],
+  "dz": -22
+ },
+ "bow": {
+  "y": [
+   650,
+   1250
+  ],
+  "base": -150,
+  "scale": 0.55
+ },
+ "rear": {
+  "y": [
+   -1050,
+   -1350
+  ],
+  "mid": 140,
+  "top": -30,
+  "bottom": 22,
+  "blend": 110
+ },
+ "uarch": {
+  "y": [
+   -450,
+   300
+  ],
+  "z": [
+   -300,
+   -260
+  ],
+  "dz": 40
+ },
+ "tips": {
+  "y": [
+   1050,
+   1300
+  ],
+  "z": [
+   -160,
+   -120
+  ],
+  "dz": 14
+ },
+ "upper_aft": {
+  "z": [
+   -180,
+   270
+  ],
+  "y_from": [
+   -450,
+   -200
+  ],
+  "dy": -140
+ }
+}
