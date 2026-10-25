@@ -9,7 +9,7 @@ sc = bpy.data.scenes["seg"]
 for o in [o for o in sc.objects if o.name in F]: bpy.data.objects.remove(o)
 body = sc.objects["corp"]; bb = bmesh.new(); bb.from_mesh(body.data); tree = BVHTree.FromBMesh(bb)
 SINK = 3.0; NR, NA = 32, 72
-BLEND = 1.35
+BLEND = 1.6
 def dome(bm, p, sx):
     rings = []
     for i in range(NR + 1):

@@ -7,3 +7,5 @@ sleep 4
 cp /home/adrian/projects/drjele/x4-andromeda-ascendant/.temp/view/show.py /tmp/claude-1000/blender_cmd.py
 sleep 5
 tail -1 /tmp/claude-1000/blender_cmd.log
+sleep 2
+if [ "${SHOW_VERSIONS:-0}" = 1 ]; then cp /home/adrian/projects/drjele/x4-andromeda-ascendant/.temp/versions/show_versions.py /tmp/claude-1000/blender_cmd.py; sleep 6; fi

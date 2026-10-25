@@ -1,5 +1,6 @@
 # Hangar decks inside the Y of each link: thin level plates stacked in the tunnel between the two branches,
-# running from the body fillet to the wing's underside, open toward the bow.
+# running from the body fillet to the wing's underside, open toward the bow; and the slat battery at the back of
+# the recess, thin horizontal blades with gaps between the decks.
 import bpy, bmesh, json
 import numpy as np
 from mathutils import Vector, Matrix
@@ -13,8 +14,10 @@ b = bmesh.new()
 for n in ("corp", "link_r"): b.from_mesh(sc.objects[n].data)
 T = BVHTree.FromBMesh(b)
 bm = bmesh.new(); t = P["thick"] / 2
-for z in P["levels"]:
-    ys = np.arange(P["y"][0], P["y"][1] + 0.1, P["step"]); spans = []
+SL = P.get("slats"); slats = [z for z in np.arange(SL["z"][0], SL["z"][1] + 0.1, SL["pitch"]) if min(abs(z - l) for l in P["levels"]) > SL["clear"]] if SL else []
+for z in P["levels"] + slats:
+    deck = z in P["levels"]; t = (P["thick"] if deck else SL["thick"]) / 2
+    ys = np.arange(P["y"][0], (P["y"][1] if deck else SL["y"][1]) + 0.1, P["step"]); spans = []
     for y in ys:
         a, an = T.ray_cast(Vector((238, y, z)), Vector((-1, 0, 0)), 250)[:2]; c, cn = T.ray_cast(Vector((238, y, z)), Vector((1, 0, 0)), 300)[:2]
         # the hits must be the flank and the wing's underside facing the tunnel, else the row lies inside
@@ -29,6 +32,7 @@ for z in P["levels"]:
         xs = np.linspace(x0, x1, 12)
         rows.append([(bm.verts.new((x, y, z + t)), bm.verts.new((x, y, z - t))) for x in xs])
     rows = [r if r and ((i and rows[i - 1]) or (i + 1 < len(rows) and rows[i + 1])) else None for i, r in enumerate(rows)]   # a lone row has no deck to cap
+    rows = [r if r and ((i and rows[i - 1]) or (i + 1 < len(rows) and rows[i + 1])) else None for i, r in enumerate(rows)]   # a lone row has no deck to cap
     for r0, r1 in zip(rows, rows[1:]):
         if r0 is None or r1 is None: continue
         for i in range(11):
@@ -37,13 +41,13 @@ for z in P["levels"]:
     if not any(rows): continue
     for r in (next(r for r in rows if r), next(r for r in reversed(rows) if r)):
         for i in range(11): bm.faces.new((r[i][0], r[i][1], r[i + 1][1], r[i + 1][0]))
-# the back wall of the hangar: a dark plate across the tunnel where the Y closes, so no wing colour shows inside
+# the back wall of the hangar (off by default: the two branches of the Y close in a V by themselves)
 yb = P["y"][0] + 1.0; cell = 2.0; G = {}
 def inside(x, z):
     # a cell is in the tunnel when it sees a ceiling above, a floor below, the flank inboard and the wing outboard
     o = Vector((x, yb, z)); hits = [T.ray_cast(o, Vector(dv), 400)[:2] for dv in ((0, 0, 1), (0, 0, -1), (-1, 0, 0), (1, 0, 0))]
     return all(h[0] is not None for h in hits) and hits[0][1].z < 0 and hits[1][1].z > 0 and hits[2][1].x > 0 and hits[3][1].x < 0
-for i, x in enumerate(np.arange(180, 460, cell)):
+for i, x in enumerate(np.arange(180, 460, cell) if P.get("wall", True) else []):
     for j, z in enumerate(np.arange(-140, 160, cell)):
         if inside(x, z): G[(i, j)] = (x, z)
 V = {}

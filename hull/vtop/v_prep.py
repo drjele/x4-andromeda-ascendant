@@ -35,17 +35,6 @@ top2 = bt2 + (tp2 - bt2) * np.sqrt(1 - (1 - r) ** 2)
 TT = P.get("tip_taper")
 if TT:
     u = np.clip((Y2[:, None] - TT["from"]) / (TT["to"] - TT["from"]), 0, 1); top2 = bt2 + (top2 - bt2) * (1 - (1 - TT["min"]) * u * u * (3 - 2 * u))
-CV = json.load(open("vdeco.json")).get("cavities", {})
-if CV:
-    Xg2, Yg2 = np.meshgrid(X2, Y2)
-    for q in CV.values():
-        pts = np.array(q["points"], float); seg = np.r_[0, np.cumsum(np.linalg.norm(np.diff(pts, axis=0), axis=1))]
-        ss = np.linspace(0, seg[-1], 120); cx, cy = np.interp(ss, seg, pts[:, 0]), np.interp(ss, seg, pts[:, 1])
-        hw, dp = np.interp(ss, np.linspace(0, seg[-1], len(q["half"])), q["half"]), np.interp(ss, np.linspace(0, seg[-1], len(q["depth"])), q["depth"])
-        for sgn in (1, -1):
-            dd = np.hypot(Xg2[..., None] - sgn * cx, Yg2[..., None] - cy); i = dd.argmin(-1); dm = dd.min(-1)
-            u = np.clip(dm / (hw[i] * 2.2), 0, 1); top2 = top2 - dp[i] * (1 - u * u) ** 2
-    top2 = np.maximum(top2, bt2 + 6)
 np.savez("vplate.npz", xs=X2, ys=Y2, mask=m2, mid=(top2 + bt2) / 2, half=(top2 - bt2) / 2, dist=dist, top=tp2, under=bt2, rim=P["rim"])
 # the keel: flat in the middle (a deck for mounts), sloping evenly out to every edge of the plate
 K = json.load(open("vdeco.json"))["v_keel"]

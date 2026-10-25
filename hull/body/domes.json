@@ -17,23 +17,5 @@
   "profile_n": 3.0,
   "behind": true,
   "z": 62
- },
- "shoulder_oval_a": {
-  "y": 130,
-  "x": 118,
-  "half_len": 62,
-  "half_wid": 30,
-  "height": 9,
-  "outline_n": 2.2,
-  "profile_n": 3.0
- },
- "shoulder_oval_b": {
-  "y": -40,
-  "x": 138,
-  "half_len": 48,
-  "half_wid": 24,
-  "height": 8,
-  "outline_n": 2.2,
-  "profile_n": 3.0
  }
 }

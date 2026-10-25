@@ -27,7 +27,7 @@ for i, a in enumerate(ang):
     for j, k in enumerate(idx):
         t, w, u = frame(C, k, oriented=True); hit, nrm = cast(T, C[k], w * math.cos(a) + u * math.sin(a))
         if hit is not None: G[(i, j)] = bm.verts.new(hit + nrm * float(L[i, j]))
-grid_mesh(bm, G, len(ang), len(idx), keep=L > 0)
+grid_mesh(bm, G, len(ang), len(idx), keep=L > -50)
 for _ in range(2): bmesh.ops.smooth_vert(bm, verts=[v for v in bm.verts if not v.is_boundary], factor=0.3, use_axis_x=True, use_axis_y=True, use_axis_z=True)
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 me = bpy.data.meshes.new("loop_grille_r"); bm.to_mesh(me)

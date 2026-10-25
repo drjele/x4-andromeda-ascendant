@@ -9,7 +9,11 @@ P = json.load(open(f"{D}/upper/u_params.json")); A = json.load(open(f"{D}/arms/a
 bpy.ops.wm.open_mainfile(filepath=f"{D}/vtop/v_scene.blend")
 sc = bpy.data.scenes["seg"]
 def tree(n): b = bmesh.new(); b.from_mesh(sc.objects[n].data); return BVHTree.FromBMesh(b)
-CT, AT = tree("corp"), tree("arm_r")
+def union(names):
+    b = bmesh.new()
+    for n in names: b.from_mesh(sc.objects[n].data)
+    return BVHTree.FromBMesh(b)
+CT, AT = union(P.get("bases", ["corp"])), tree("arm_r")                 # the pylon fillets onto the rear deck and the crescent as well
 A = np.array(A, float)
 # the pylon follows the source's open C in the x-z plane: nearly upright off the body, then curving out to the arm
 def soft(xq, xk, yk, w):

@@ -9,8 +9,10 @@ bpy.ops.wm.open_mainfile(filepath=f"{D}/vtop/v_scene.blend")
 sc = bpy.data.scenes["seg"]
 for o in [o for o in sc.objects if o.name in ("upper_r", "upper_l")]: bpy.data.objects.remove(o)
 trees = []
-for n, cap in (("corp", 1e9), ("arm_r", P["cap"])):
-    b = bmesh.new(); b.from_mesh(sc.objects[n].data); trees.append((BVHTree.FromBMesh(b), cap))
+for names, cap in ((json.load(open(f"{D}/upper/u_params.json")).get("bases", ["corp"]), 1e9), (["arm_r"], P["cap"])):
+    b = bmesh.new()
+    for n in names: b.from_mesh(sc.objects[n].data)
+    trees.append((BVHTree.FromBMesh(b), cap))
 me = bpy.data.meshes.new("upper_r"); me.from_pydata(d["v"].tolist(), [], d["f"].tolist())
 bm = bmesh.new(); bm.from_mesh(me)
 kill = []

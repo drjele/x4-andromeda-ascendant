@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Pass-2 review sheets: the pass-1 sheets plus neutral-grey renders beside the series references and cross-sections.
 set -e
-T=/home/adrian/projects/drjele/x4-andromeda-ascendant/.temp; OUT=${1:-/home/adrian/Documents/Andromeda/2026-10-24-fable/pass3}; R=$T/view/fable2
+T=/home/adrian/projects/drjele/x4-andromeda-ascendant/.temp; OUT=${1:-/home/adrian/Documents/Andromeda/2026-10-24-fable/pass4}; R=$T/view/fable2
 REF=/home/adrian/Documents/Andromeda/references; P=$T/overlay/.venv/bin/python
 mkdir -p "$R" "$OUT"
 $T/view/fable.sh "$OUT" >/dev/null

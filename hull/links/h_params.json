@@ -1,1 +1,1 @@
-{"levels": [-25, 8, 41, 74], "thick": 3.0, "y": [-300, -118], "step": 2.0, "round": 8, "inset": [6, 5]}
+{"levels": [-40, -8, 24], "thick": 3.0, "y": [-300, -118], "step": 2.0, "round": 8, "inset": [6, 2], "wall": false, "slats": {"y": [-300, -252], "z": [-38, 40], "pitch": 8.5, "thick": 1.6, "clear": 3.5}}
