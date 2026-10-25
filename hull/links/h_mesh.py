@@ -22,7 +22,22 @@ for z in P["levels"] + slats:
         a, an = T.ray_cast(Vector((238, y, z)), Vector((-1, 0, 0)), 250)[:2]; c, cn = T.ray_cast(Vector((238, y, z)), Vector((1, 0, 0)), 300)[:2]
         # the hits must be the flank and the Y's outer wall facing into the tunnel, else the row lies inside
         # the closed stern of the Y and gets no deck
-        spans.append((a.x - P["inset"][0], c.x + P["inset"][1]) if a is not None and c is not None and an.x > 0 and cn.x < -0.2 and c.x - a.x > 8 else None)
+        if a is None or c is None or an.x <= 0 or cn.x >= -0.2 or c.x - a.x <= 8: spans.append(None); continue
+        # the plate keeps only the stretch that lies in the cavity: ceiling above and floor (or the body) below its
+        # faces, so it ends where the floor climbs to the ceiling at the back instead of poking out of the link
+        xs_ = np.arange(a.x + 1, c.x - 0.5, 2.0); ok = []
+        for x in xs_:
+            up = T.ray_cast(Vector((x, y, z + t + 0.5)), Vector((0, 0, 1)), 300)[:2]; dn = T.ray_cast(Vector((x, y, z - t - 0.5)), Vector((0, 0, -1)), 300)[:2]
+            ok.append(up[0] is not None and dn[0] is not None and up[1].z < 0.2 and dn[1].z > -0.2)
+        best, run = (0, -1), None
+        for i, k in enumerate(ok + [False]):
+            if k and run is None: run = i
+            if not k and run is not None:
+                if i - 1 - run > best[1] - best[0]: best = (run, i - 1)
+                run = None
+        if best[1] - best[0] < 4: spans.append(None); continue
+        x0 = a.x - P["inset"][0] if best[0] == 0 else xs_[best[0]]; x1 = c.x + P["inset"][1] if best[1] == len(xs_) - 1 else xs_[best[1]]
+        spans.append((x0, x1))
     # the front corners round off so each deck reads as a lip, not a cut box
     rows = []
     for y, sp in zip(ys, spans):

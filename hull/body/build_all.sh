@@ -21,6 +21,7 @@ blender -b --python ../trace/v7_body.py 2>&1 | grep "V7 BODY"
 # every surface evened out last (Taubin, per group passes in smooth_all.json)
 cp ../vtop/v_scene.blend ../vtop/v_scene_presmooth.blend      # to retune smooth_all.json without a full rebuild
 blender -b --python ../trace/smooth_all.py 2>&1 | grep -oE "^SMOOTH .{0,80}"
+blender -b --python ../trace/link_wrap.py 2>&1 | grep "LINK WRAP"
 blender -b --python ../trace/v1_blend.py 2>&1 | grep "V1 BLEND"
 blender -b --python ../trace/fill_holes.py 2>&1 | grep HOLES
 # the hangar decks last, fitted inside the smoothed links (built earlier they poked through the wing)

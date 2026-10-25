@@ -1,0 +1,2 @@
+{"_doc": "link_wrap.py: link vertices below z_max (faded in over z_fade) and within reach of the body skin are drawn onto it, ending sink inside it",
+ "z_max": -40, "z_fade": 30, "reach": 30, "sink": -1.0}
