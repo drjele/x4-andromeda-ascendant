@@ -9,22 +9,28 @@ from scipy.interpolate import splprep, splev
 D, VIEW, NJ, OUT = sys.argv[1:5]; R = "/home/adrian/projects/drjele/x4-andromeda-ascendant/.temp/overlay/ref01"; K = 4
 N = json.load(open(NJ)); SPUR, TOL, GAP = N.get("spur", 45), N.get("tol", 5.0), N.get("gap", 40)
 NB = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-ref = cv2.imread(f"{R}/{VIEW}.png"); H, W = ref.shape[0] * K, ref.shape[1] * K
+ref = cv2.imread(N.get("ref", f"{R}/{VIEW}.png")); K = 1 if N.get("ref") else K   # "ref": a sheet at drawing scale (views outside ref 01)
+TR = N.get("transpose", False)                                             # a vertical centreline: worked on transposed, flipped back at the end
+H, W = ref.shape[0] * K, ref.shape[1] * K
 mask = np.zeros((H, W), bool)
 for pen, ids in N["pens"].items():
     lab = np.load(f"{D}/{pen}_lab.npy")
     for i in ids: mask |= lab == i
 mask = cv2.morphologyEx(mask.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8)) > 0     # strokes drawn twice side by side read as one
+for x0, y0, x1, y1 in N.get("erase", []): mask[y0:y1, x0:x1] = False     # handwritten letters touching a line (sheet px), cut off before thinning
+if TR: mask = mask.T; ref = ref.transpose(1, 0, 2); H, W = W, H
 if N.get("half"):
     # one half of a symmetric view processed on its own (the strokes past the centreline dropped); the result is
     # mirrored at the end, so the user picks the half drawn better
-    sil = cv2.resize((cv2.imread(f"{R}/{VIEW}_mask.png", 0) > 127).astype(np.uint8), (W, H), interpolation=cv2.INTER_NEAREST) > 0
-    rows = np.nonzero(sil.any(1))[0]; best = None
-    for a2 in range(2 * rows.min() + 20, 2 * rows.max() - 20, 2):
-        idx = a2 - np.arange(H); ok = (idx >= 0) & (idx < H); f = np.zeros_like(sil); f[ok] = sil[idx[ok]]
-        sc = (f & sil).sum() / max((f | sil).sum(), 1)
-        if best is None or sc > best[0]: best = (sc, a2)
-    AX = best[1] / 2
+    if "axis" in N: AX = float(N["axis"])                                  # the centreline already known (the view's negative)
+    else:
+        sil = cv2.resize((cv2.imread(f"{R}/{VIEW}_mask.png", 0) > 127).astype(np.uint8), (W, H), interpolation=cv2.INTER_NEAREST) > 0
+        rows = np.nonzero(sil.any(1))[0]; best = None
+        for a2 in range(2 * rows.min() + 20, 2 * rows.max() - 20, 2):
+            idx = a2 - np.arange(H); ok = (idx >= 0) & (idx < H); f = np.zeros_like(sil); f[ok] = sil[idx[ok]]
+            sc = (f & sil).sum() / max((f | sil).sum(), 1)
+            if best is None or sc > best[0]: best = (sc, a2)
+        AX = best[1] / 2
     if N["half"] == "upper": mask[int(np.ceil(AX)):] = False
     else: mask[:int(np.floor(AX)) + 1] = False
     print("half %s, axis row %.1f" % (N["half"], AX))
@@ -131,13 +137,15 @@ joins = N.get("joins", [])
 if N.get("half"):
     # one half of a symmetric view processed on its own (the strokes past the centreline dropped); the result is
     # mirrored at the end, so the user picks the half drawn better
-    sil = cv2.resize((cv2.imread(f"{R}/{VIEW}_mask.png", 0) > 127).astype(np.uint8), (W, H), interpolation=cv2.INTER_NEAREST) > 0
-    rows = np.nonzero(sil.any(1))[0]; best = None
-    for a2 in range(2 * rows.min() + 20, 2 * rows.max() - 20, 2):
-        idx = a2 - np.arange(H); ok = (idx >= 0) & (idx < H); f = np.zeros_like(sil); f[ok] = sil[idx[ok]]
-        sc = (f & sil).sum() / max((f | sil).sum(), 1)
-        if best is None or sc > best[0]: best = (sc, a2)
-    AX = best[1] / 2
+    if "axis" in N: AX = float(N["axis"])                                  # the centreline already known (the view's negative)
+    else:
+        sil = cv2.resize((cv2.imread(f"{R}/{VIEW}_mask.png", 0) > 127).astype(np.uint8), (W, H), interpolation=cv2.INTER_NEAREST) > 0
+        rows = np.nonzero(sil.any(1))[0]; best = None
+        for a2 in range(2 * rows.min() + 20, 2 * rows.max() - 20, 2):
+            idx = a2 - np.arange(H); ok = (idx >= 0) & (idx < H); f = np.zeros_like(sil); f[ok] = sil[idx[ok]]
+            sc = (f & sil).sum() / max((f | sil).sum(), 1)
+            if best is None or sc > best[0]: best = (sc, a2)
+        AX = best[1] / 2
     if N["half"] == "upper": mask[int(np.ceil(AX)):] = False
     else: mask[:int(np.floor(AX)) + 1] = False
     print("half %s, axis row %.1f" % (N["half"], AX))
@@ -168,7 +176,10 @@ if N.get("half"):
             if abs(c[e][1] - AX) < N.get("snap", 25): c[e][1] = AX
     curves = curves + [np.stack([c[:, 0], 2 * AX - c[:, 1]], 1) for c in curves]
 out = (cv2.resize(ref, (W, H)) * 0.75).astype(np.uint8)
-if N.get("half"): cv2.line(out, (0, int(round(AX))), (W, int(round(AX))), (255, 255, 0), 2)
+if TR: out = out.transpose(1, 0, 2).copy(); curves = [c[:, ::-1] for c in curves]
+if N.get("half"):
+    if TR: cv2.line(out, (int(round(AX)), 0), (int(round(AX)), out.shape[0]), (255, 255, 0), 2)
+    else: cv2.line(out, (0, int(round(AX))), (W, int(round(AX))), (255, 255, 0), 2)
 for c in curves: cv2.polylines(out, [np.round(c).astype(np.int32)], False, tuple(N.get("colour", [0, 255, 0])), 6, cv2.LINE_AA)
 json.dump([c.tolist() for c in curves], open(f"{D}/{VIEW}_network.json", "w")); cv2.imwrite(OUT, cv2.resize(out, None, fx=0.5, fy=0.5))
 print("NETWORK branches %d, rings %d, junctions %d" % (len(branches), len(curves) - len(branches), len(centres)))
