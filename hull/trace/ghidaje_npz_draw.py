@@ -12,7 +12,11 @@ def mat(n, c):
 for k in G.files:
     P = G[k]; cu = bpy.data.curves.new(PRE + k, "CURVE"); cu.dimensions = "3D"; cu.bevel_depth = 0.8; sp = cu.splines.new("POLY"); sp.points.add(len(P) - 1)
     for p, q in zip(sp.points, P): p.co = (q[0] + X0, q[1], q[2], 1)
-    cu.materials.append(mat("ghid_contur", (0.1, 0.8, 0.2, 1)) if k.startswith(("contur", "spinare")) else mat("ghid_sus", (1, 0.1, 0.1, 1)))
+    if k.startswith("contact_"): cu.materials.append(mat("ghid_contact", (1, 0.85, 0.05, 1)))            # joint guides:
+    elif k.startswith("pri_"): cu.materials.append(mat("ghid_principal", (0.05, 0.85, 1, 1)))             # contact yellow,
+    elif k.startswith("sec_"): cu.materials.append(mat("ghid_secundar", (1, 0.1, 0.85, 1)))              # bands cyan/magenta
+    elif k.startswith("perp_"): cu.materials.append(mat("ghid_perpendicular", (1, 0.85, 0.05, 1)))        # normals yellow
+    else: cu.materials.append(mat("ghid_contur", (0.1, 0.8, 0.2, 1)) if k.startswith(("contur", "spinare")) else mat("ghid_sus", (1, 0.1, 0.1, 1)))
     o = bpy.data.objects.new(PRE + k, cu); col.objects.link(o); o.color = tuple(cu.materials[0].diffuse_color)
 print("GHIDAJE: %d scoase (%s...), %d desenate la x %+.0f in %s" % (len(gone), ", ".join(gone[:3]), len(G.files), X0, COL))
 bpy.ops.wm.save_as_mainfile(filepath=OUT); print("SAVED", OUT)

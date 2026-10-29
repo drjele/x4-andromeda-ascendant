@@ -92,6 +92,9 @@ if LIP:                                                                 # height
     if os.environ.get("BV_SINE_DREPTE"):                               # the rails straight too (a bent bar each, through their glued
         def bara(P0, Vc, P1, R_):                                       # front end, their point at the spine's corner and their rear
             u1 = (P0 - Vc) / np.linalg.norm(P0 - Vc); u2 = (P1 - Vc) / np.linalg.norm(P1 - Vc); ph = np.arccos(np.clip(u1 @ u2, -1, 1)) / 2   # end;
+            if not np.isfinite(ph) or ph > np.radians(89.5):           # almost no bend (flat V, or the corner on an end): straight
+                Pl = np.vstack([P0, Vc, P1]); dd_ = np.r_[0, np.cumsum(np.linalg.norm(np.diff(Pl, axis=0), axis=1))]
+                uu = np.linspace(0, dd_[-1], len(sp)); return np.stack([np.interp(uu, dd_, Pl[:, i]) for i in (0, 1)], 1)
             tl_ = R_ / np.tan(ph); A1, A2 = Vc + u1 * tl_, Vc + u2 * tl_; Cc_ = Vc + (u1 + u2) / np.linalg.norm(u1 + u2) * R_ / np.sin(ph)   # it may
             b1, b2 = np.arctan2(*(A1 - Cc_)[::-1]), np.arctan2(*(A2 - Cc_)[::-1]); db = np.angle(np.exp(1j * (b2 - b1))); nn = max(int(abs(db) * R_), 8)   # cut a
             arc_ = Cc_ + R_ * np.stack([np.cos(b1 + np.linspace(0, db, nn)), np.sin(b1 + np.linspace(0, db, nn))], 1)   # little into the pieces)
