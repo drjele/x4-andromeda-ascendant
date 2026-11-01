@@ -5,7 +5,9 @@
 # Ship coords = world + X0 on x (ASAMBLAT_NOU pieces have location x -X0, mesh in ship coords).
 # Asked next: move it a little further back and hollow an_PS where the tube is, so nothing obstructs it: the mouth goes SH m
 # further back (env SH) and, with SCOB=1, an_PS gets a boolean cut = the tube's box grown by CL m on the sides (exact solver).
-# Usage: blender -b <scene.blend> --python tub_lansare_U.py -- <out.blend> [x0=1600]   env TW=40 TH=30 TL=80 PROUD=0.5 SH=0 SCOB=0 CL=0.3
+# Asked next: further into PS, the way in front of the mouth hollowed so it is unobstructed: MUTA=<m> moves the existing tube
+# along y (+ = deeper) keeping its box; SCOB=1 cuts its box + CL from 60 m in front of the mouth to its back end out of an_PS.
+# Usage: blender -b <scene.blend> --python tub_lansare_U.py -- <out.blend> [x0=1600]   env TW=40 TH=30 TL=80 PROUD=0.5 SH=0 SCOB=0 CL=0.3 MUTA=
 import bpy, sys, os, numpy as np
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
@@ -16,24 +18,31 @@ for n in ("an_PS", "an_PS_rama", "an_PS_carena", "an_capac_086"):
     o = bpy.data.objects[n]; b = len(V); V += [tuple(o.matrix_world @ v.co + Vector((X0, 0, 0))) for v in o.data.vertices]
     F += [[b + i for i in p.vertices] for p in o.data.polygons]
 bvh = BVHTree.FromPolygons([Vector(p) for p in V], F); Va = np.array(V)
-hits = []
-for z in np.arange(Va[:, 2].min(), Va[:, 2].max(), 0.5):
-    h = bvh.ray_cast(Vector((0, -400, z)), Vector((0, 1, 0)), 600)
-    if h[0] is not None and h[1].y < -0.5: hits.append((z, h[0].y))   # a face looking backwards = the U's bottom wall
-hits = np.array(hits)
-# the wall = the contiguous z run of hits close to the U's bottom (within 3 m of its median y)
-ym = np.median(hits[:, 1]); w = hits[np.abs(hits[:, 1] - ym) < 3]; zlo, zhi = w[:, 0].min(), w[:, 0].max(); zc = (zlo + zhi) / 2
-yin = w[:, 1].max()                                                    # innermost point of the U at x = 0
-x0, x1 = -TW / 2, TW / 2; z0, z1 = zc - TH / 2, zc + TH / 2
-# the mouth must be visible (asked: the tube was hidden inside an_PS - the U's wall bows, 3..7 m behind the centre point): first
-# hits along +y over the whole front face, the mouth PROUD m behind the furthest-back one, so it stands out of the wall everywhere
-PROUD = float(os.environ.get("PROUD", 0.5)); fy = []
-for xx in np.linspace(x0, x1, 9):
-    for zz in np.linspace(z0, z1, 7):
-        h = bvh.ray_cast(Vector((xx, -400, zz)), Vector((0, 1, 0)), 600)
-        if h[0] is not None: fy.append(h[0].y)
-SH = float(os.environ.get("SH", 0)); y0 = min(fy) - PROUD - SH; y1 = y0 + TL
-print("PERETE pe fata tubului: y %.1f .. %.1f -> gura la y %.1f (iese %.1f .. %.1f m din perete)" % (min(fy), max(fy), y0, PROUD, max(fy) - y0))
+MUTA = os.environ.get("MUTA")                                          # move the existing tube MUTA m along y (+ = deeper into PS)
+if MUTA is not None and "an_launchtube_s_01" in bpy.data.objects:
+    ot = bpy.data.objects["an_launchtube_s_01"]; T = np.array([ot.matrix_world @ v.co + Vector((X0, 0, 0)) for v in ot.data.vertices])
+    (x0, ya, z0), (x1, yb, z1) = T.min(0), T.max(0); TL = yb - ya; zc = (z0 + z1) / 2; zlo, zhi = z0, z1
+    y0 = ya + float(MUTA); y1 = y0 + TL
+    print("MUTAT: gura de la y %.1f la y %.1f (%+.1f m)" % (ya, y0, float(MUTA)))
+else:
+    hits = []
+    for z in np.arange(Va[:, 2].min(), Va[:, 2].max(), 0.5):
+        h = bvh.ray_cast(Vector((0, -400, z)), Vector((0, 1, 0)), 600)
+        if h[0] is not None and h[1].y < -0.5: hits.append((z, h[0].y))   # a face looking backwards = the U's bottom wall
+    hits = np.array(hits)
+    # the wall = the contiguous z run of hits close to the U's bottom (within 3 m of its median y)
+    ym = np.median(hits[:, 1]); w = hits[np.abs(hits[:, 1] - ym) < 3]; zlo, zhi = w[:, 0].min(), w[:, 0].max(); zc = (zlo + zhi) / 2
+    yin = w[:, 1].max()                                                    # innermost point of the U at x = 0
+    x0, x1 = -TW / 2, TW / 2; z0, z1 = zc - TH / 2, zc + TH / 2
+    # the mouth must be visible (asked: the tube was hidden inside an_PS - the U's wall bows, 3..7 m behind the centre point): first
+    # hits along +y over the whole front face, the mouth PROUD m behind the furthest-back one, so it stands out of the wall everywhere
+    PROUD = float(os.environ.get("PROUD", 0.5)); fy = []
+    for xx in np.linspace(x0, x1, 9):
+        for zz in np.linspace(z0, z1, 7):
+            h = bvh.ray_cast(Vector((xx, -400, zz)), Vector((0, 1, 0)), 600)
+            if h[0] is not None: fy.append(h[0].y)
+    SH = float(os.environ.get("SH", 0)); y0 = min(fy) - PROUD - SH; y1 = y0 + TL
+    print("PERETE pe fata tubului: y %.1f .. %.1f -> gura la y %.1f (iese %.1f .. %.1f m din perete)" % (min(fy), max(fy), y0, PROUD, max(fy) - y0))
 Vt = [(x, y, z) for z in (z0, z1) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))]
 Ft = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
 nm = "an_launchtube_s_01"
