@@ -1,16 +1,21 @@
-# The visible guides welded into ONE object and hidden, not deleted (asked: hide the guides but keep them, joined in one
-# piece). Every curve in the named collections joined into one curve object NAME in collection NAME (hidden, excluded
-# from render); the old collections stay (empty). Usage: blender -b <in> --python sudeaza_ghidaje.py -- <out> <NAME> <COLL...>
-import bpy, sys, os
-a = sys.argv[sys.argv.index("--") + 1:]; OUT, NAME, COLLS = a[0], a[1], a[2:]
-obs = [o for c in COLLS for o in bpy.data.collections[c].objects if o.type == "CURVE"]
-for o in obs: o.hide_set(False); o.hide_viewport = False
-bpy.ops.object.select_all(action="DESELECT")
-for o in obs: o.select_set(True)
-bpy.context.view_layer.objects.active = obs[0]; bpy.ops.object.join(); j = bpy.context.view_layer.objects.active; j.name = NAME
-nc = bpy.data.collections.new(NAME); bpy.context.scene.collection.children.link(nc)
-for c in list(j.users_collection): c.objects.unlink(j)
-nc.objects.link(j)
-if os.environ.get("SG_ASCUNDE", "1") == "1": j.hide_set(True); j.hide_render = True    # SG_ASCUNDE=0 keeps it visible
-print("GHIDAJE SUDATE: %d curbe din %s -> 1 obiect %s (%d linii), %s" % (len(obs), ", ".join(COLLS), NAME, len(j.data.splines), "ascuns" if j.hide_get() else "vizibil"))
+# Welds guide curves into one body per group (asked: weld the arms' and the nacelles' guides, each one body; the back arms'
+# g_as_bo_* too, another body): every curve object whose name matches the group's regex is joined into one curve object (one
+# spline per former guide, same points, place, bevel and materials); nothing is moved. The former names, in spline order, are
+# kept on the welded object as the custom property "linii" (JSON) so they can be taken apart again by name.
+# Usage: blender -b <in> --python sudeaza_ghidaje.py -- <out.blend> <welded name>=<regex> [<welded name>=<regex>] ...
+import bpy, sys, re, json
+a = sys.argv[sys.argv.index("--") + 1:]; OUT = a[0]
+for spec in a[1:]:
+    name, rx = spec.split("=", 1); r = re.compile(rx)
+    parts = sorted((o for o in bpy.data.objects if o.type == "CURVE" and r.fullmatch(o.name)), key=lambda o: o.name)
+    if not parts: print("SUDAT %s: nimic pentru %s" % (name, rx)); continue
+    names = []
+    for o in parts: names += [o.name] * len(o.data.splines)
+    col = parts[0].users_collection[0]; n_sp = sum(len(o.data.splines) for o in parts)
+    with bpy.context.temp_override(active_object=parts[0], selected_editable_objects=parts, selected_objects=parts):
+        bpy.ops.object.join()
+    w = parts[0]; w.name = name; w.data.name = name; w["linii"] = json.dumps(names)
+    print("SUDAT %s: %d ghidaje -> 1 corp (%d linii, %d puncte), colectia %s"
+          % (name, len(set(names)), len(w.data.splines), sum(len(s.points) for s in w.data.splines), col.name))
+    assert len(w.data.splines) == n_sp
 bpy.ops.wm.save_as_mainfile(filepath=OUT)

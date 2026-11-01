@@ -16,7 +16,7 @@
 # per rib; the normals computed on the whole band at once and set on every rib (no shading seams at the shared outlines).
 import bpy, sys, json, numpy as np
 a = sys.argv[sys.argv.index("--") + 1:]; CJ, GJ, OUT, DX, DY = a[0], a[1], a[2], float(a[3]), float(a[4])
-GAP = int(a[6]) if len(a) > 6 and a[5] == "gol" else None; ALL = len(a) > 5 and a[5] == "toata"; SUB = 4; RANGE = (int(a[5]), int(a[6])) if len(a) > 6 and GAP is None and not ALL else None; R = json.load(open(CJ)); Gd = json.load(open(GJ)); sc = bpy.context.scene; N = len(R); NU = 81
+GAP = int(a[6]) if len(a) > 6 and a[5] == "gol" else None; ALL = len(a) > 5 and a[5] == "toata"; SUB = int(__import__("os").environ.get("NACELA_SUB", "4")); RANGE = (int(a[5]), int(a[6])) if len(a) > 6 and GAP is None and not ALL else None; R = json.load(open(CJ)); Gd = json.load(open(GJ)); sc = bpy.context.scene; N = len(R); NU = 81
 def bez(c, t): c = np.array(c); t = np.atleast_1d(t)[:, None]; return (1 - t) ** 3 * c[0] + 3 * (1 - t) ** 2 * t * c[1] + 3 * (1 - t) * t ** 2 * c[2] + t ** 3 * c[3]
 TS = np.linspace(-0.05, 1.2, 50001); GU = [bez(r["control"], TS) for r in Gd["rails"]]; TB = np.gradient(GU[1], axis=0); TB /= np.linalg.norm(TB, axis=1)[:, None]
 def face(k, f): c = np.array(R[k][f]); return np.array([c[1], c[0], c[2]])     # (point, end1, end2)
@@ -171,8 +171,23 @@ np.save(OUT.replace(".blend", "_sectiuni.npy"), G)
 dj = np.gradient(G, axis=0); dm = np.roll(G, -1, axis=1) - np.roll(G, 1, axis=1); NRM = np.cross(dm, dj); nn = np.linalg.norm(NRM, axis=2)
 NRM = np.where(nn[:, :, None] > 1e-9, NRM / np.maximum(nn, 1e-9)[:, :, None], 0)
 cen = G.mean(1, keepdims=True); flip = np.sign(np.mean(np.sum(NRM * (G - cen), axis=2))); NRM *= flip   # outward
-if ALL:                                                                     # at the meeting point: the direction of the tip
-    ja = 0 if TIP_AT_START else len(G) - 1; jb = 1 if TIP_AT_START else len(G) - 2; d = G[ja].mean(0) - G[jb].mean(0); NRM[ja] = d / np.linalg.norm(d)
+def tip_dir():                                                              # at the meeting point: the direction of the tip
+    if ALL:
+        ja = 0 if TIP_AT_START else len(G) - 1; jb = 1 if TIP_AT_START else len(G) - 2; d = G[ja].mean(0) - G[jb].mean(0); NRM[ja] = d / np.linalg.norm(d)
+tip_dir()
+# NACELA_RELIEF=h: the dark ribs raised h m - pushed out along the normal, a half sine across the rib (0 at its edges, so the
+# light neighbours still share the outline), the normals recomputed so the relief shows in the shading
+RELIEF = float(__import__("os").environ.get("NACELA_RELIEF", "0"))
+if RELIEF:
+    bump = np.zeros(len(G)); prof = RELIEF * np.sin(np.pi * np.arange(SUB + 1) / SUB)
+    for s_ in range(lo_s, hi_s):
+        if slots[s_]: j0 = OFF + (s_ - lo_s) * SUB; bump[j0:j0 + SUB + 1] = np.maximum(bump[j0:j0 + SUB + 1], prof)
+    for t in range(len(TIP) // SUB):
+        if t % 2 == 1: j0 = (OFF - (t + 1) * SUB) if TIP_AT_START else (NB - 1 + t * SUB); bump[j0:j0 + SUB + 1] = np.maximum(bump[j0:j0 + SUB + 1], prof)
+    G = G + NRM * bump[:, None, None]
+    dj = np.gradient(G, axis=0); dm = np.roll(G, -1, axis=1) - np.roll(G, 1, axis=1); NRM = np.cross(dm, dj); nn = np.linalg.norm(NRM, axis=2)
+    NRM = np.where(nn[:, :, None] > 1e-9, NRM / np.maximum(nn, 1e-9)[:, :, None], 0); NRM *= flip; tip_dir()
+    print("NACELA_RELIEF: nervurile inchise ridicate %.2f m (jumatate de sinus pe latimea nervurii, %d sectiuni pe nervura)" % (RELIEF, SUB))
 def build(js, name, mt, side):
     V = G[js].reshape(-1, 3).copy(); Nv = NRM[js].reshape(-1, 3).copy(); L = len(js)
     F = [(j * M_ + i, j * M_ + (i + 1) % M_, (j + 1) * M_ + (i + 1) % M_, (j + 1) * M_ + i) for j in range(L - 1) for i in range(M_)]
