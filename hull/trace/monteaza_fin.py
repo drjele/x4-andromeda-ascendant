@@ -6,7 +6,8 @@
 # Local frame of sup_fin_A: x = across (minus its x0), y = along (front +y), z = up, base at z = 0.
 # Ship coords = world + X0 on x (ASAMBLAT_NOU pieces have location x -X0, mesh in ship coords). D = mirror x -> -x, faces reversed.
 # Usage: blender -b <scene.blend> --python monteaza_fin.py -- <out.blend> [x0=1600] [guide x0=-5200]
-#        env K=0.173 B=-140.1 SF=167 SINK=0.2
+#        env K=0.173 B=-140.1 SF=167 SINK=0.2 VERTICAL=0 (1: the fin stands vertical across - only the base's slope along the line is
+#        kept, the sideways tilt of the plane dropped - and the base is lowered further so no edge floats)
 import bpy, sys, os, numpy as np
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
@@ -36,6 +37,10 @@ res = Z - A @ c; off = -res.min() + SINK                                 # lower
 ey = np.array([d[0], d[1], c[1]]); ey /= np.linalg.norm(ey)
 ex = np.array([nrm[0], nrm[1], c[2]]); ex -= ey * (ex @ ey); ex /= np.linalg.norm(ex)
 ez = np.cross(ex, ey)
+print("PLAN: panta in lungul liniei %.1f grade, panta laterala %.1f grade" % (np.degrees(np.arctan(c[1])), np.degrees(np.arctan(c[2]))))
+if E("VERTICAL", 0):                                                     # sideways tilt dropped: base across = horizontal
+    c[2] = 0.0; res = Z - A @ c; off = -res.min() + SINK
+    ey = np.array([d[0], d[1], c[1]]); ey /= np.linalg.norm(ey); ex = np.array([nrm[0], nrm[1], 0.0]); ez = np.cross(ex, ey)
 if ez[2] < 0: ez = -ez
 O = np.array([O2[0], O2[1], c[0] - off])
 Q = O + np.outer(P[:, 0], ex) + np.outer(P[:, 1], ey) + np.outer(P[:, 2], ez)
