@@ -9,6 +9,7 @@
 # the arm tip by L m (its across offset scaled to the arm's half-width there, so it stays inside); shape keys "etapa_k" (NS stages)
 # keyed one after another = a path along the curve. The door keeps the arm's UVs and material (asked: same texture as the arm, so
 # it can't be told apart) and has a round hole (column radius + CL) around each red column, which stays down through it.
+# HOLE=0: no round hole for the column in the doors.
 # Timing in ATELIER_LAME (asked: once the blades are out, the hatch closes): 1 -> 1+FO opens (blades wait FO frames: lame_spirala.py
 # FO=), FO+FD -> 2FO+FD closes behind the dropped blades, re-opens to be open at FO+2F-FD+1 when they climb back, 2F+FO -> 2F+2FO closes. Usage: blender -b <in.blend> --python lame_usa_culisanta.py -- <out.blend>
 #   env FR=.6 MG=.25 S1=770 L=790 UP=7 TH=1.5 NS=16 FO=24 F=60 FD=20 SIG=20 CL=1
@@ -233,10 +234,12 @@ if COMP:
         for m_ in meS.materials: dm.materials.append(m_)
         c = bpy.data.objects["at_spinare_%s_S" % gk]; cx, cy = c.matrix_world.translation.x - XI["ATELIER_LAME"], c.matrix_world.translation.y
         rc = max(v.co.xy.length for v in c.data.vertices) * c.scale.x + CL
-        bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=rc, depth=1000, location=(cx, cy, 0)); cyl = bpy.context.active_object
-        tmp = bpy.data.objects.new("tmp_gaura", dm); bpy.context.scene.collection.objects.link(tmp)
-        nm = boolean(tmp, "DIFFERENCE", cyl); dm.clear_geometry(); bmn = bmesh.new(); bmn.from_mesh(nm); bmn.to_mesh(dm); bmn.free(); bpy.data.meshes.remove(nm)
-        bpy.data.objects.remove(tmp); bpy.data.objects.remove(cyl); doorS[gk] = dm
+        if int(E("HOLE", 1)):                                            # HOLE=0 (asked: no half-hole at the PS end of the 4 doors)
+            bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=rc, depth=1000, location=(cx, cy, 0)); cyl = bpy.context.active_object
+            tmp = bpy.data.objects.new("tmp_gaura", dm); bpy.context.scene.collection.objects.link(tmp)
+            nm = boolean(tmp, "DIFFERENCE", cyl); dm.clear_geometry(); bmn = bmesh.new(); bmn.from_mesh(nm); bmn.to_mesh(dm); bmn.free(); bpy.data.meshes.remove(nm)
+            bpy.data.objects.remove(tmp); bpy.data.objects.remove(cyl)
+        doorS[gk] = dm
         print("USA COMP usa %s: %d fete (piele + grosime %.1f m pe N), gaura R %.1f m" % (gk, len(dm.polygons), TH, rc))
         B0 = box("tmp_B0_" + gk, gk, 0.0, lambda sk: sk - 3, lambda sk: sk + EPS + .3)
         Bg = box("tmp_Bg_" + gk, gk, GAP, lambda sk: sk + EPS, lambda sk: np.full_like(sk, CEIL))
