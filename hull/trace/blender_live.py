@@ -16,5 +16,10 @@ def watch():
     return 1.0
 @persistent
 def again(_):
+    for scr in bpy.data.screens:                                         # asked: models seen normally, never half-transparent
+        for ar in scr.areas:
+            for sp in ar.spaces:
+                if sp.type == "VIEW_3D": sp.shading.show_xray = False
     if not bpy.app.timers.is_registered(watch): bpy.app.timers.register(watch, first_interval=1.0, persistent=True)
 bpy.app.handlers.load_post.append(again); bpy.app.timers.register(watch, first_interval=1.0, persistent=True)
+again(None)
