@@ -89,6 +89,7 @@ for L in bloops(bmc):
 TF = BV.FromPolygons([p for t in FV for p in t], [[3 * i, 3 * i + 1, 3 * i + 2] for i in range(len(FV))])
 closed = bpy.data.meshes.new("tmp_carena_inchisa"); bmc.to_mesh(closed); NBC = sum(1 for e in bmc.edges if e.is_boundary); bmc.free()
 orig_me = car.data; ORIG_NAME = orig_me.name; car.data = closed
+for mt in orig_me.materials: closed.materials.append(mt)              # bmesh.to_mesh does not carry the material slots
 print("USA_CARENA carena inchisa temporar: %d muchii libere -> %d (%d triunghiuri de umplere)" % (NB0, NBC, len(FV)))
 SETOF = {"F": "fata", "B": "spate"}
 U_ = np.load(E("URMA", "/home/adrian/Documents/Andromeda/2026-10-29-imbinari/piese/urma_lame_carena_v1.npz")); ZMAX = {s_: U_[s_][:, 2].max() for s_ in ("fata", "spate")}
@@ -101,7 +102,8 @@ for k in DOORS:
     # a straight wall sliding inwards like the arm doors in the arms, the other way)
     pd = prism("tmp_pd", dpol, 240, zc - DSEAM); cc = tmp_copy(car, "tmp_cc"); dm = boolean(cc, "INTERSECT", pd); kill(pd); bpy.data.objects.remove(cc)
     dm.name = "at_usa_carena_%s_S" % k; bd = bmesh.new(); bd.from_mesh(dm); nfree = sum(1 for e in bd.edges if e.is_boundary); bd.free()
-    for mt in car.data.materials: dm.materials.append(mt)
+    if not dm.materials:
+        for mt in car.data.materials: dm.materials.append(mt)
     door = bpy.data.objects.new(dm.name, dm); doorsS[k] = door; col.objects.link(door); door.location = OX
     col_ = bpy.data.objects["at_spinare_%s_S" % SETOF[k]]; ccx, ccy = col_.matrix_world.translation.x - OX.x, col_.matrix_world.translation.y   # the hinge
     rcol = max(v.co.xy.length for v in col_.data.vertices) * col_.matrix_world.to_scale().x + CL     # stays down through the closed door: same hole as the arm doors
