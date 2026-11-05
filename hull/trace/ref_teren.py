@@ -14,7 +14,7 @@ from scipy.interpolate import griddata
 Z = np.load(sys.argv[1]); OUT, SHEET, XC = sys.argv[2], sys.argv[3], float(sys.argv[4])
 YS = [float(t) for t in sys.argv[5].split(",")]; XS = [float(t) for t in sys.argv[6].split(",")]
 CELL = float(sys.argv[7]) if len(sys.argv) > 7 else 2.0; SIG = float(sys.argv[8]) if len(sys.argv) > 8 else 6.0; TT = sys.argv[9] if len(sys.argv) > 9 else ""
-GAP = 4.0; v = Z["v"].astype(float).copy(); v[:, 0] -= XC; f = Z["f"]
+GAP = float(__import__("os").environ.get("TEREN_GAP", "4")); v = Z["v"].astype(float).copy(); v[:, 0] -= XC; f = Z["f"]
 x0, y0 = -np.abs(v[:, 0]).max() - 10, v[:, 1].min() - 10; nx = int(2 * -x0 / CELL) + 1; ny = int((v[:, 1].max() + 10 - y0) / CELL) + 1
 pts = []
 for t in f:                                                             # dense samples on every triangle (about CELL/2 apart)
@@ -26,7 +26,7 @@ zmax = np.full(nx * ny, -np.inf); zmin = np.full(nx * ny, np.inf); np.maximum.at
 zmax, zmin = zmax.reshape(ny, nx), zmin.reshape(ny, nx); cov = np.isfinite(zmax)
 two = cov & (zmax - zmin > GAP); one = cov & ~two
 mid = np.where(two, (zmax + zmin) / 2, np.nan); yy, xx = np.nonzero(two)
-midf = griddata((yy, xx), mid[two], np.indices((ny, nx)).transpose(1, 2, 0).reshape(-1, 2), method="nearest").reshape(ny, nx)
+midf = griddata((yy, xx), mid[two], np.indices((ny, nx)).transpose(1, 2, 0).reshape(-1, 2), method="nearest").reshape(ny, nx) if len(yy) > 3 else np.full((ny, nx), float(np.mean(zmin[cov])) - 1.0)   # no two-layer cell: a single sheet, all of it the top
 midf = gaussian_filter(midf, 10)
 top = np.where(two | (one & (zmax >= midf)), zmax, np.nan); bot = np.where(two | (one & (zmin < midf)), zmin, np.nan)
 import os
@@ -37,7 +37,10 @@ if FG and FU: bot[one & (edt(~two) * CELL < FU)] = np.nan              # is fill
 foot = binary_fill_holes(binary_closing(cov, np.ones((5, 5))))       # the footprint (inner holes filled, the U open to the back)
 def fill(F, SIG=SIG, CLOSE=0.0):                                        # holes filled from around, then smoothed, inside the footprint
     ok = np.isfinite(F) & foot; yy, xx = np.nonzero(ok); g = np.indices((ny, nx)).transpose(1, 2, 0).reshape(-1, 2)
-    L = griddata((yy, xx), F[ok], g, method="linear").reshape(ny, nx); N = griddata((yy, xx), F[ok], g, method="nearest").reshape(ny, nx)
+    if len(yy) < 4: return np.full((ny, nx), float(np.nanmean(zmax[cov]) if len(yy) == 0 else np.mean(F[ok])))   # a face with nothing read: flat
+    N = griddata((yy, xx), F[ok], g, method="nearest").reshape(ny, nx)
+    try: L = griddata((yy, xx), F[ok], g, method="linear").reshape(ny, nx)
+    except Exception: L = N
     L = np.where(np.isfinite(L), L, N); w = gaussian_filter(foot.astype(float), SIG / CELL)
     if CLOSE:                                                           # valleys narrower than CLOSE m filled from above (a ball rolled
         from scipy.ndimage import grey_closing                          # over the face): the dips left where the original has no face

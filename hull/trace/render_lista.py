@@ -16,7 +16,7 @@ if os.environ.get("PIESE"):
         if o.type != "CURVE": o.color = next((c for k, c in CC.items() if k in o.name), (.1, .8, .2, 1) if o.name == "an_PS" else (.2, .2, .2, 1))
 sc.render.resolution_x = sc.render.resolution_y = int(os.environ.get("RES", 1100))
 cam = bpy.data.cameras.new("c"); co = bpy.data.objects.new("c", cam); sc.collection.objects.link(co); sc.camera = co; cam.clip_end = 50000; cam.type = "ORTHO"
-DV = {"jos": (0, 0, -1), "sus": (0, 0, 1), "oblic": (.5, -.5, -.7), "oblicS": (-.5, -.5, -.7), "oblicF": (-.5, .5, -.7), "oblicI": (.5, .5, -.7), "x+": (1, 0, 0), "x-": (-1, 0, 0), "y-": (0, -1, 0), "y+": (0, 1, 0)}
+DV = {"ojos": (-.5, .5, -.7), "osus": (-.5, -.5, .7), "lat": (-1, 0, 0), "fata": (0, 1, 0), "spate": (0, -1, 0), "jos": (0, 0, -1), "sus": (0, 0, 1), "oblic": (.5, -.5, -.7), "oblicS": (-.5, -.5, -.7), "oblicF": (-.5, .5, -.7), "oblicI": (.5, .5, -.7), "x+": (1, 0, 0), "x-": (-1, 0, 0), "y-": (0, -1, 0), "y+": (0, 1, 0)}
 for v in V:
     C = Vector([float(t) for t in v[1].split(",")]); C.x += XO; d = Vector(DV[v[3]]).normalized(); sc.frame_set(int(v[4])); sh.color_type = v[5] if len(v) > 5 else "OBJECT"
     cam.ortho_scale = float(v[2]); co.location = C + d * 3000; co.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler(); sc.render.filepath = os.path.join(OD, v[0] + ".png"); bpy.ops.render.render(write_still=True)

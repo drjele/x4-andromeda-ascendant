@@ -11,7 +11,7 @@ sc.render.engine = "BLENDER_WORKBENCH"; sc.render.resolution_x = 900; sc.render.
 sh = sc.display.shading; sh.light = "FLAT"; sh.color_type = "SINGLE"; sh.single_color = (1, 1, 1); sc.render.film_transparent = False
 sc.world = sc.world or bpy.data.worlds.new("w"); sh.background_type = "VIEWPORT"; sh.background_color = (0, 0, 0)
 cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); sc.collection.objects.link(cam); sc.camera = cam; cam.data.type = "ORTHO"; cam.data.ortho_scale = 3000; cam.data.clip_end = 30000
-X = 900 if PREF.startswith("B") else -900
+X = float(__import__("os").environ.get("HX", 900 if PREF.startswith("B") else -900))
 views = {"sus": ((X, 0, 6000), (0, 0, 0)), "jos": ((X, 0, -6000), (math.pi, 0, 0)), "stanga": ((X - 6000, 0, 0), (math.pi / 2, 0, -math.pi / 2)), "dreapta": ((X + 6000, 0, 0), (math.pi / 2, 0, math.pi / 2)), "fata": ((X, 6000, 0), (math.pi / 2, 0, math.pi)), "spate": ((X, -6000, 0), (math.pi / 2, 0, 0))}
 for n, (loc, rot) in views.items():
     cam.location = loc; cam.rotation_euler = rot
