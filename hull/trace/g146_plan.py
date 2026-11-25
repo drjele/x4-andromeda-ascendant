@@ -1,6 +1,7 @@
 # nt_146 plan rails, clean: outer contour nose -> arm tip and inner contour V apex -> arm tip, from the reference silhouette (S half read on x > 0, mirrored), straight lines + tangent arcs.
 import numpy as np, cv2, json, sys, matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt, g1_arce as g
-O = "/home/adrian/Documents/Andromeda/2026-11-05-nt146/"; c = np.load(O + "sil.npy"); c = c * [-1, 1]; h = c[c[:, 0] >= 0]
+VARF = float(__import__("os").environ.get("VARF", "452.5"))                      # asked 2026-11-08: PI tip where the PS tip is (468.5), the rest of the outline unchanged
+O = __import__("os").environ.get("G146_O", "/home/adrian/Documents/Andromeda/2026-11-05-nt146/"); c = np.load(O + "sil.npy"); c = c * [-1, 1]; h = c[c[:, 0] >= 0]
 # walk the closed contour from the nose
 c = np.vstack([c, c[:1]]); i0 = np.argmax(c[:, 1]); c = np.roll(c[:-1], -i0, axis=0)
 if c[120, 0] < 0: c = c[::-1]
@@ -11,7 +12,10 @@ fig, a = plt.subplots(figsize=(9, 9)); a.plot(c[it - 450:it + 350, 0], c[it - 45
 np.savez(O + "sil_walk.npz", c=c, it=it, iap=iap)
 # rails: fork at the arm tip left out (separate question), both rails carried straight on to the oblique end plane of the reference tip. Inner rail by exact construction:
 # apex arc tangent to the axis normal + straight V + fillet + the arm's chain; outer rail one chain of long pieces.
-dE = c[:it]; dE = dE[:np.argmin(np.linalg.norm(dE - [484, -743], axis=1))]; dE = np.vstack([[0, 452.5], dE[dE[:, 0] >= 0]]); RE = g.fit(dE, tol=2.5, rmin=10, x0=[0, 452.5], th0=0.0, lmin=40.0)
+dE = c[:it]; dE = dE[:np.argmin(np.linalg.norm(dE - [484, -743], axis=1))]; dE = np.vstack([[0, VARF], dE[dE[:, 0] >= 0]])
+if __import__("os").environ.get("NAS_PS"):                                          # asked 2026-11-07: nose rounded like the PS nose, exact construction from g146_bot.py (NAS_PS = A / B)
+    RE = dict(seg=[tuple(q) for q in json.load(open(O + "bot_seg.json"))[__import__("os").environ["NAS_PS"]]], x0=np.array([0, VARF]), th0=0.0); RE["tot"] = sum(q[0] for q in RE["seg"]); S_, _ = g.draw(RE, .5); dd = g.KD(S_).query(dE)[0]; RE["dev"], RE["devmax"] = float(dd.mean()), float(dd.max())
+else: RE = g.fit(dE, tol=2.5, rmin=10, x0=[0, VARF], th0=0.0, lmin=40.0)
 dI = c[it:iap + 1][::-1]; dI = dI[:np.argmin(np.linalg.norm(dI - [484, -826], axis=1))]; dI = dI[dI[:, 0] >= 0]
 vp = dI[(dI[:, 0] > 22) & (dI[:, 0] < 92)]; ml, ql = np.polyfit(vp[:, 0], vp[:, 1], 1); al = np.arctan(ml); Ra, Rc = 24.0, 22.0; print("V: panta %.1f grade, dev %.2f" % (np.degrees(al), np.abs(np.polyval([ml, ql], vp[:, 0]) - vp[:, 1]).max()))
 Rt = g.fit(dI[dI[:, 1] < -140], tol=1.5, rmin=10, lmin=40.0); P0 = Rt["x0"]; t0 = Rt["th0"]                   # the arm's chain, then the corner as a fillet between its first tangent and the V line

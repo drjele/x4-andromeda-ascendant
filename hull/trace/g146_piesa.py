@@ -1,10 +1,11 @@
 # nt_146 from clean guides, surface lofted THROUGH them so they lie on it by construction. Half on x > 0 (S side of the reference), mirrored. Plan rails = lines + tangent arcs (g146_plan.py),
 # height rails = lines + tangent arcs over arc length, ribs = planar: inner quarter ellipse + straight run + outer quarter ellipse. Writes <out>/146.npz + 146_g.npz, report + sheets.
 import numpy as np, trimesh, json, os, sys, matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt, g1_arce as g
+VARF = float(__import__("os").environ.get("VARF", "452.5"))                      # asked 2026-11-08: PI tip where the PS tip is (468.5), the rest of the outline unchanged
 from scipy.interpolate import PchipInterpolator as PC
 from scipy.ndimage import gaussian_filter1d as gf
 from scipy.spatial import cKDTree as KD
-O = "/home/adrian/Documents/Andromeda/2026-11-05-nt146/"; P = "/home/adrian/Documents/Andromeda/2026-10-29-imbinari/piese/"; OUT = sys.argv[1]; os.makedirs(OUT, exist_ok=True)
+O = __import__("os").environ.get("G146_O", "/home/adrian/Documents/Andromeda/2026-11-05-nt146/"); P = "/home/adrian/Documents/Andromeda/2026-10-29-imbinari/piese/"; OUT = sys.argv[1]; os.makedirs(OUT, exist_ok=True)
 C = np.load(O + "coaste_raw.npz"); Pi, Pe, W, th, nb = C["Pi"], C["Pe"], C["w"], C["th"], int(C["nb"]); arc = lambda A: np.r_[0, np.cumsum(np.linalg.norm(np.diff(A, axis=0), axis=1))]; S = arc((Pi + Pe) / 2) + 16.0; n = len(S); sap = S[nb - 1]
 ok = ~np.isnan(th[:, 0]); print("apex la s = %.0f; statii %d" % (sap, n)); SEG = {}
 from scipy.interpolate import make_lsq_spline
@@ -48,10 +49,13 @@ RG = [rib(k)[0] for k in range(n)]; nr = len(RG[0])
 # nose: the last ribs closed as a half ellipse in (y, z), so the two sides meet on the axis in one round tip
 d = (Pe - Pi); d = d / np.maximum(np.linalg.norm(d, axis=1, keepdims=True), 1e-9); V = np.array([np.c_[Pi[k, 0] + d[k, 0] * R[:, 0], Pi[k, 1] + d[k, 1] * R[:, 0], R[:, 1]] for k, R in enumerate(RG)])
 E_ = np.load(O + "rails_plan.npz")["E"]; sE = arc(E_); r0 = RG[0].copy(); r1 = RG[1]; zc = float(zE(S[0])); Y0 = Pi[0, 1]; NS = []; oe = np.argsort(E_[:400, 1])
-u0 = .8; A0 = (452.5 - Y0) / (1 - u0); yc = 452.5 - A0; g0 = np.sqrt(1 - u0 ** 2); print("nas: elipsa semi-axa %.0f, centrul y %.0f" % (A0, yc))   # one long ellipse from y 395 to the tip
+u0 = .8; A0 = (VARF - Y0) / (1 - u0); yc = VARF - A0; g0 = np.sqrt(1 - u0 ** 2); print("nas: elipsa semi-axa %.0f, centrul y %.0f" % (A0, yc))   # one long ellipse from y 395 to the tip
 PHI = np.linspace(np.arcsin(u0) + .03, np.pi / 2 - .06, 26)[::-1]; ST = yc + A0 * np.sin(PHI)
+HN = float(os.environ.get("NAS_RUND", "0"))                                           # asked 2026-11-07: blunt round nose (full height until HN m before the tip, then a quarter ellipse), not the long taper
+sl = (r0[:, 1] - r1[:, 1]) / (Pi[0, 1] - Pi[1, 1]) if HN > 0 else 0 * r0[:, 1]                # the body's slope carried on into the nose (each ring point straight on), no kink at the joint
+if HN > 0: ST = (Y0 + (VARF - Y0) * np.sin(np.linspace(0.04, np.pi / 2 - .015, 30)))[::-1]; y1 = VARF - HN     # tip first, as the long ellipse
 for y in ST:
-    f = np.sqrt(np.clip(1 - ((y - yc) / A0) ** 2, 0, 1)) / g0; xe = float(np.interp(y, E_[oe, 1], E_[oe, 0])); ringx = r0[:, 0] / max(W[0], 1e-6) * xe; NS.append(np.c_[ringx, np.full(nr, y), zc + (r0[:, 1] - zc) * f])
+    f = (np.sqrt(np.clip(1 - ((y - yc) / A0) ** 2, 0, 1)) / g0) if HN <= 0 else (1.0 if y <= y1 else float(np.sqrt(np.clip(1 - ((y - y1) / HN) ** 2, 0, 1)))); xe = float(np.interp(y, E_[oe, 1], E_[oe, 0])); ringx = r0[:, 0] / max(W[0], 1e-6) * xe; NS.append(np.c_[ringx, np.full(nr, y), zc + (r0[:, 1] + sl * (y - Y0) - zc) * f])
 V = np.vstack([np.array(NS)[None][0], V]); ns = len(V); oax = len(ST) + nb   # stations on the axis
 Q = []
 for k in range(ns - 1):
@@ -63,7 +67,7 @@ Q = np.array(Q); T = np.vstack([Q[:, [0, 1, 2]], Q[:, [0, 2, 3]]])
 cf = []; a0 = 0
 for j in range(nr - 1): pass
 Vf = V.reshape(-1, 3); tip = np.array([(Vf[(ns - 1) * nr + j]) for j in range(nr)]).mean(0); it_ = len(Vf); Vf = np.vstack([Vf, tip]); tc = np.array([[(ns - 1) * nr + j, (ns - 1) * nr + (j + 1) % nr, it_] for j in range(nr)])[:, [0, 2, 1]]
-nz = np.array([0.0, 452.5, zc]); iz = len(Vf); Vf = np.vstack([Vf, nz]); nc = np.array([[j, j + 1, iz] for j in range(2 * Nt)])[:, [0, 2, 1]]; nc[-1, 2] = 0 if False else nc[-1, 2]; Vf[0:2 * Nt + 1, 0] *= 1.0
+nz = np.array([0.0, VARF, zc]); iz = len(Vf); Vf = np.vstack([Vf, nz]); nc = np.array([[j, j + 1, iz] for j in range(2 * Nt)])[:, [0, 2, 1]]; nc[-1, 2] = 0 if False else nc[-1, 2]; Vf[0:2 * Nt + 1, 0] *= 1.0
 # weld (collapsed walls, the tube's closed inner end), then mirror across x = 0
 F = np.vstack([T, tc, nc]); Vf[np.abs(Vf[:, 0]) < 1e-4, 0] = 0.0; Vf = Vf.copy(); Vm = Vf * [-1, 1, 1]; Fm = F[:, ::-1] + len(Vf); VA = np.vstack([Vf, Vm]); FA = np.vstack([F, Fm])
 m = trimesh.Trimesh(VA, FA, process=False); m.merge_vertices(digits_vertex=3); m.update_faces(m.nondegenerate_faces()); m.remove_unreferenced_vertices(); trimesh.repair.fix_normals(m)

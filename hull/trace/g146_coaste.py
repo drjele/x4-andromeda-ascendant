@@ -1,10 +1,10 @@
 # nt_146 ribs: one vertical plane per station through the paired points of the two plan rails (body: y = const, arm: across the arm), the reference section read in that plane and
 # fitted with one family: inner end + straight run + outer end, elliptic quarters on top and below. Writes the raw parameters per station.
-import numpy as np, trimesh, matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
+import numpy as np, trimesh, os, matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 from scipy.optimize import least_squares
 from scipy.spatial import cKDTree as KD
 from scipy.ndimage import gaussian_filter1d as gf
-O = "/home/adrian/Documents/Andromeda/2026-11-05-nt146/"; P = "/home/adrian/Documents/Andromeda/2026-10-29-imbinari/piese/"
+O = __import__("os").environ.get("G146_O", "/home/adrian/Documents/Andromeda/2026-11-05-nt146/"); P = "/home/adrian/Documents/Andromeda/2026-10-29-imbinari/piese/"
 Z = np.load(P + "nt_ref_toate.npz", allow_pickle=True); v = Z["R005_146_C__v"].astype(float) * [-1, 1, 1]; f = Z["R005_146_C__f"][:, ::-1]; m = trimesh.Trimesh(v, f, process=False)
 R = np.load(O + "rails_plan.npz"); E, I = R["E"], R["I"]; arc = lambda A: np.r_[0, np.cumsum(np.linalg.norm(np.diff(A, axis=0), axis=1))]; sE, sI = arc(E), arc(I)
 at = lambda A, s, q: np.stack([np.interp(q, s, A[:, 0]), np.interp(q, s, A[:, 1])], 1)
@@ -38,7 +38,14 @@ for k in range(n):
         T_, B_ = rib(top[:, 0].clip(0, W), [*x, W])[0], rib(bot[:, 0].clip(0, W), [*x, W])[1]; return np.r_[T_ - top[:, 1], B_ - bot[:, 1]]
     lo = [zm, zm - 200, zm - 40, .5, zm - 60, zm - 60, 0.0, zm - 100, zm - 200]; hi = [zm + 200, zm, zm + 40, W, zm + 60, zm + 60, 0.001 if onax else W, zm + 200, zm + 100]; x0 = np.clip(x0, np.array(lo) + 1e-6, np.array(hi) - 1e-6)
     r = least_squares(res, x0, bounds=(lo, hi), loss="soft_l1", f_scale=1.0, max_nfev=60); RES.append(r.x)
-RES = np.array(RES); np.savez(O + "coaste_raw.npz", Pi=Pi, Pe=Pe, w=w, th=RES, nb=len(B)); s_c = arc((Pi + Pe) / 2); names = ["zT", "zB", "zE", "ao", "zIt", "zIb", "ai", "zTi", "zBi"]; S_C = s_c; zone = np.nonzero((s_c > 470) & (s_c < 660))[0]; print("  s    zT    zB    zE    ao   zIt   zIb   ai  zTi  zBi   w")
+RES = np.array(RES)
+if os.environ.get("NAS_TH"):                                                         # wider nose than the reference: on the axis (y > 0) the heights of the 11-05 fit, the outer round scaled with the width
+    C0 = np.load(os.environ["NAS_TH"]); P0_, T0_, W0_, n0_ = C0["Pi"], C0["th"], C0["w"], int(C0["nb"]); o_ = np.argsort(P0_[:n0_, 1])
+    for k in range(len(B)):
+        y_ = Pi[k, 1]
+        if y_ <= 0: continue
+        RES[k] = [np.interp(y_, P0_[:n0_, 1][o_], T0_[:n0_, j][o_]) for j in range(9)]; RES[k, 3] *= w[k] / np.interp(y_, P0_[:n0_, 1][o_], W0_[:n0_][o_])
+np.savez(O + "coaste_raw.npz", Pi=Pi, Pe=Pe, w=w, th=RES, nb=len(B)); s_c = arc((Pi + Pe) / 2); names = ["zT", "zB", "zE", "ao", "zIt", "zIb", "ai", "zTi", "zBi"]; S_C = s_c; zone = np.nonzero((s_c > 470) & (s_c < 660))[0]; print("  s    zT    zB    zE    ao   zIt   zIb   ai  zTi  zBi   w")
 for k in zone[:: 2]: print("%4.0f " % s_c[k] + " ".join("%6.1f" % q for q in RES[k]) + " %5.1f" % w[k])
 fig, ax = plt.subplots(3, 1, figsize=(15, 11))
 for j in (0, 1, 2, 4, 5): ax[0].plot(s_c, RES[:, j], label=names[j], lw=.9)
